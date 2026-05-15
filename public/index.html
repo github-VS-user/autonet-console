@@ -546,9 +546,12 @@
 
         <textarea class="context-input" id="context-text" placeholder="Optional context — e.g. &quot;Tuesday's homework, exercise 3, use substitution method&quot;"></textarea>
 
-        <div class="upload-btn-wrap">
-          <button class="btn btn-primary" id="upload-btn">
-            <span id="upload-text">Upload</span>
+        <div class="upload-btn-wrap" style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="upload-btn" style="flex:1;">
+            <span id="upload-text">Upload with PDF</span>
+          </button>
+          <button class="btn btn-primary" id="text-btn" style="flex:1;">
+            <span id="text-btn-text">Submit Text Only</span>
           </button>
         </div>
       </div>
@@ -652,9 +655,42 @@
       }
       selectedFile = file;
       document.getElementById('file-name').textContent = '📎 ' + file.name;
+      document.getElementById('upload-text').textContent = 'Upload ' + file.name;
     }
 
     document.getElementById('upload-btn').addEventListener('click', upload);
+    document.getElementById('text-btn').addEventListener('click', submitText);
+
+    async function submitText() {
+      const context = document.getElementById('context-text').value.trim();
+      if (!context) { showToast('Enter context text first', 'error'); return; }
+      const btn = document.getElementById('text-btn');
+      const txt = document.getElementById('text-btn-text');
+      btn.disabled = true;
+      txt.innerHTML = '<span class="spinner"></span>Submitting…';
+
+      try {
+        const res = await fetch(API + '/api/submit', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ context })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Submission failed');
+
+        showToast(data.message || '✅ Text submitted', 'success');
+        document.getElementById('context-text').value = '';
+        refreshStatus();
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        txt.textContent = 'Submit Text Only';
+      }
+    }
 
     async function upload() {
       if (!selectedFile) { showToast('Select a PDF first', 'error'); return; }

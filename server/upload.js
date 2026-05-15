@@ -68,7 +68,7 @@ router.get('/status', requireAuth, (req, res) => {
   try {
     if (fs.existsSync(incoming)) {
       fs.readdirSync(incoming)
-        .filter(f => f.endsWith('.pdf'))
+        .filter(f => f.endsWith('.pdf') || f.endsWith('.txt'))
         .forEach(f => pending.push(f));
     }
   } catch {}
@@ -76,12 +76,33 @@ router.get('/status', requireAuth, (req, res) => {
   try {
     if (fs.existsSync(completed)) {
       fs.readdirSync(completed)
-        .filter(f => f.endsWith('.pdf'))
+        .filter(f => f.endsWith('.pdf') || f.endsWith('.txt'))
         .forEach(f => done.push(f));
     }
   } catch {}
 
-  res.json({ pending, completed, customer: req.customer });
+  res.json({ pending, completed: done, customer: req.customer });
+});
+
+// POST /api/submit — text-only submission (no PDF)
+router.post('/submit', requireAuth, (req, res) => {
+  const { context } = req.body;
+  if (!context || !context.trim()) {
+    return res.status(400).json({ error: 'Context text is required' });
+  }
+
+  const dir = path.join(DATA_DIR, 'customers', req.customer, 'incoming');
+  fs.mkdirSync(dir, { recursive: true });
+
+  const timestamp = Date.now();
+  const textFile = path.join(dir, `${timestamp}-text-submission.txt`);
+  fs.writeFileSync(textFile, context.trim());
+
+  res.json({
+    ok: true,
+    message: `✅ Text submission registered for ${req.customer}`,
+    file: `${timestamp}-text-submission.txt`
+  });
 });
 
 module.exports = { router };
