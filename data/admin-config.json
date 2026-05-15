@@ -37,9 +37,7 @@
   "customers": {
     "matisse": {
       "plan": "basic"
-    },
-    "max": {
-      "plan": "standard"
     }
+
   }
 }

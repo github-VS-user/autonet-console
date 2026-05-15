@@ -168,14 +168,14 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 <td><input type="number" class="editable" id="vps-cost" step="0.01" min="0"> <span style="font-size:12px;color:var(--dim)">$/mois</span></td>
 <td class="mono" id="vps-monthly">—</td>
 <td class="mono" id="vps-chf">—</td>
-<td><button class="btn-icon" onclick="saveCosts()">💾</button></td>
+<td></td>
 </tr>
 <tr>
 <td>🌐 Domaine</td><td>autonet.live (Namecheap)</td>
 <td><input type="number" class="editable" id="domain-cost" step="0.01" min="0"> <span style="font-size:12px;color:var(--dim)">$/an</span></td>
 <td class="mono" id="domain-monthly">—</td>
 <td class="mono" id="domain-chf">—</td>
-<td><button class="btn-icon" onclick="saveCosts()">💾</button></td>
+<td></td>
 </tr>
 <tr style="border-top:2px solid var(--accent)">
 <td><strong>Total fixe</strong></td><td></td><td></td>
@@ -354,20 +354,18 @@ function updateFixedCosts() {
   document.getElementById('domain-chf').textContent = 'CHF ' + (domM * fxRate).toFixed(2);
   document.getElementById('fixed-total-chf').textContent = 'CHF ' + (total * fxRate).toFixed(2);
 }
-document.getElementById('vps-cost').addEventListener('input', updateFixedCosts);
-document.getElementById('domain-cost').addEventListener('input', updateFixedCosts);
-
-async function saveCosts() {
+function autoSaveCosts() {
   const vps = Number(document.getElementById('vps-cost').value) || 0;
   const domain = Number(document.getElementById('domain-cost').value) || 0;
-  try {
-    await fetch(API + '/api/admin/config', {
-      method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-      body: JSON.stringify({ fixedCosts: { vps: { monthlyCost: vps }, domain: { yearlyCost: domain } } })
-    });
-    showToast('✅ Coûts sauvegardés', 'success');
-  } catch(e) { showToast('Erreur', 'error'); }
+  fetch(API + '/api/admin/config', {
+    method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({ fixedCosts: { vps: { monthlyCost: vps }, domain: { yearlyCost: domain } } })
+  }).catch(() => {});
 }
+document.getElementById('vps-cost').addEventListener('input', updateFixedCosts);
+document.getElementById('vps-cost').addEventListener('blur', autoSaveCosts);
+document.getElementById('domain-cost').addEventListener('input', updateFixedCosts);
+document.getElementById('domain-cost').addEventListener('blur', autoSaveCosts);
 
 // ── Upload ──
 const dropZone = document.getElementById('drop-zone');
