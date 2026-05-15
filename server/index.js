@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const { authRouter } = require('./auth');
-const { uploadRouter } = require('./upload');
+const { router: authRouter } = require('./auth');
+const { router: uploadRouter } = require('./upload');
 
 const app = express();
 const PORT = process.env.PORT || 3456;
@@ -20,6 +20,6 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
-app.listen(PORT, '127.0.0.1', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Autonet Console API running on http://127.0.0.1:${PORT}`);
 });
