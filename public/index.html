@@ -4,20 +4,736 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Autonet Console</title>
-  <!-- V0 will build the frontend here -->
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #07080a;
+      --surface: rgba(255,255,255,0.03);
+      --surface-hover: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.06);
+      --border-active: rgba(0,230,255,0.3);
+      --text: #e8eaed;
+      --text-dim: rgba(255,255,255,0.35);
+      --accent: #00e6ff;
+      --accent-glow: rgba(0,230,255,0.15);
+      --accent2: #8b5cf6;
+      --accent2-glow: rgba(139,92,246,0.12);
+      --success: #22c55e;
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, sans-serif; background: #0f0f0f; color: #eee; min-height: 100vh; display: flex; justify-content: center; align-items: center; }
-    .placeholder { text-align: center; padding: 2rem; }
-    .placeholder h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-    .placeholder p { color: #888; }
+    html { height: 100%; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(0,230,255,0.04) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 70% 80%, rgba(139,92,246,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Grid overlay */
+    .grid {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      z-index: 1;
+    }
+
+    /* Login screen */
+    #login-screen {
+      animation: fadeUp 0.6s ease;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo .icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      margin-bottom: 16px;
+      font-size: 24px;
+    }
+
+    .logo h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo p {
+      color: var(--text-dim);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    .card {
+      background: var(--surface);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: border-color 0.3s;
+    }
+
+    .card:focus-within {
+      border-color: var(--border-active);
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    .input-group input[type="text"],
+    .input-group input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      transition: all 0.3s;
+      letter-spacing: 4px;
+      text-align: center;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .input-group input::placeholder {
+      color: rgba(255,255,255,0.15);
+      letter-spacing: 1px;
+      font-family: 'Inter', sans-serif;
+      text-align: center;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(0,230,255,0.2);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-danger {
+      background: rgba(239,68,68,0.1);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.2);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239,68,68,0.2);
+    }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 20px;
+      transition: opacity 0.3s;
+    }
+
+    .error-msg:empty {
+      opacity: 0;
+    }
+
+    /* Dashboard screen */
+    #dash-screen {
+      display: none;
+      animation: fadeUp 0.5s ease;
+    }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .dash-header .greeting {
+      font-size: 14px;
+      color: var(--text-dim);
+    }
+
+    .dash-header .greeting strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .dash-header .logout-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .dash-header .logout-btn:hover {
+      color: #ef4444;
+      border-color: rgba(239,68,68,0.3);
+      background: rgba(239,68,68,0.05);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-card .num {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-card .num.pending { color: var(--accent); }
+    .stat-card .num.done { color: var(--success); }
+
+    .stat-card .label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .upload-zone {
+      background: var(--surface);
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 24px;
+      position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .upload-zone .icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.6;
+    }
+
+    .upload-zone .text {
+      color: var(--text-dim);
+      font-size: 14px;
+    }
+
+    .upload-zone .text strong {
+      color: var(--accent);
+    }
+
+    .upload-zone input[type="file"] {
+      display: none;
+    }
+
+    .upload-zone .file-name {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .context-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      resize: none;
+      min-height: 60px;
+      transition: all 0.3s;
+      margin-top: 12px;
+    }
+
+    .context-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .context-input::placeholder {
+      color: rgba(255,255,255,0.2);
+    }
+
+    .upload-btn-wrap {
+      margin-top: 12px;
+    }
+
+    /* Status section */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      margin-top: 24px;
+    }
+
+    .file-list {
+      list-style: none;
+    }
+
+    .file-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 13px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .file-list li .name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .file-list li .name .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .file-list li .name .dot.pending { background: var(--accent); }
+    .file-list li .name .dot.done { background: var(--success); }
+
+    .file-list li .status-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .file-list li .status-badge.pending-badge {
+      color: var(--accent);
+      background: rgba(0,230,255,0.1);
+    }
+
+    .file-list li .status-badge.done-badge {
+      color: var(--success);
+      background: rgba(34,197,94,0.1);
+    }
+
+    .file-list .empty-msg {
+      color: var(--text-dim);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 20px;
+      font-size: 14px;
+      z-index: 100;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success { border-color: rgba(34,197,94,0.3); }
+    .toast.error { border-color: rgba(239,68,68,0.3); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 16px; }
+      .stats-row { gap: 8px; }
+      .stat-card { padding: 12px; }
+      .stat-card .num { font-size: 22px; }
+    }
   </style>
 </head>
 <body>
-  <div class="placeholder">
-    <h1>Autonet Console</h1>
-    <p>Frontend coming soon — built with V0</p>
+  <div class="grid"></div>
+
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+
+    <!-- LOGIN -->
+    <div id="login-screen">
+      <div class="logo">
+        <div class="icon">⚡</div>
+        <h1>Autonet</h1>
+        <p>Console</p>
+      </div>
+      <div class="card">
+        <div class="input-group">
+          <label>Access code</label>
+          <input type="text" id="access-code" placeholder="Enter your code" maxlength="10" autofocus>
+        </div>
+        <button class="btn btn-primary" id="login-btn">Access Console</button>
+        <div class="error-msg" id="login-error"></div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dash-screen">
+      <div class="dash-header">
+        <div class="greeting"><strong id="customer-name">—</strong>'s console</div>
+        <button class="logout-btn" id="logout-btn">Exit</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="num pending" id="pending-count">0</div>
+          <div class="label">Pending</div>
+        </div>
+        <div class="stat-card">
+          <div class="num done" id="done-count">0</div>
+          <div class="label">Completed</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="upload-zone" id="drop-zone">
+          <div class="icon">📄</div>
+          <div class="text">Drop a <strong>PDF</strong> here, or click to select</div>
+          <div class="file-name" id="file-name"></div>
+          <input type="file" id="file-input" accept=".pdf,application/pdf">
+        </div>
+
+        <textarea class="context-input" id="context-text" placeholder="Optional context — e.g. &quot;Tuesday's homework, exercise 3, use substitution method&quot;"></textarea>
+
+        <div class="upload-btn-wrap">
+          <button class="btn btn-primary" id="upload-btn">
+            <span id="upload-text">Upload</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="section-title">Pending</div>
+      <ul class="file-list" id="pending-list">
+        <li class="empty-msg">No pending files</li>
+      </ul>
+
+      <div class="section-title">Completed</div>
+      <ul class="file-list" id="done-list">
+        <li class="empty-msg">No completed files</li>
+      </ul>
+    </div>
+
   </div>
-  <script src="/app.js"></script>
+
+  <script>
+    const API = window.location.origin; // same origin, or set explicitly
+    let token = localStorage.getItem('autonet_token');
+    let customer = localStorage.getItem('autonet_customer');
+
+    // Auto-login if token exists
+    if (token && customer) {
+      showDash();
+      refreshStatus();
+    }
+
+    // ── Login ──
+    document.getElementById('login-btn').addEventListener('click', login);
+    document.getElementById('access-code').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    async function login() {
+      const code = document.getElementById('access-code').value.trim();
+      const btn = document.getElementById('login-btn');
+      const err = document.getElementById('login-error');
+      if (!code) { err.textContent = 'Enter an access code'; return; }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Connecting…';
+      err.textContent = '';
+
+      try {
+        const res = await fetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessCode: code })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Invalid code');
+
+        token = data.token;
+        customer = data.customer;
+        localStorage.setItem('autonet_token', token);
+        localStorage.setItem('autonet_customer', customer);
+
+        showDash();
+        refreshStatus();
+      } catch (e) {
+        err.textContent = e.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Access Console';
+      }
+    }
+
+    // ── Logout ──
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.removeItem('autonet_token');
+      localStorage.removeItem('autonet_customer');
+      token = null; customer = null;
+      document.getElementById('dash-screen').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'block';
+      document.getElementById('access-code').value = '';
+      document.getElementById('access-code').focus();
+    });
+
+    // ── Upload ──
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    let selectedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    });
+
+    function handleFile(file) {
+      if (file.type !== 'application/pdf') {
+        showToast('Only PDF files are accepted', 'error');
+        return;
+      }
+      selectedFile = file;
+      document.getElementById('file-name').textContent = '📎 ' + file.name;
+    }
+
+    document.getElementById('upload-btn').addEventListener('click', upload);
+
+    async function upload() {
+      if (!selectedFile) { showToast('Select a PDF first', 'error'); return; }
+      const btn = document.getElementById('upload-btn');
+      const txt = document.getElementById('upload-text');
+      btn.disabled = true;
+      txt.innerHTML = '<span class="spinner"></span>Uploading…';
+
+      try {
+        const form = new FormData();
+        form.append('file', selectedFile);
+        form.append('context', document.getElementById('context-text').value);
+
+        const res = await fetch(API + '/api/upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: form
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+        showToast(data.message || '✅ Uploaded successfully', 'success');
+        selectedFile = null;
+        document.getElementById('file-name').textContent = '';
+        document.getElementById('context-text').value = '';
+        fileInput.value = '';
+        refreshStatus();
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
+        txt.textContent = 'Upload';
+      }
+    }
+
+    // ── Status ──
+    async function refreshStatus() {
+      if (!token) return;
+      try {
+        const res = await fetch(API + '/api/status', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error('Status failed');
+
+        document.getElementById('pending-count').textContent = data.pending.length;
+        document.getElementById('done-count').textContent = data.completed.length;
+
+        const pendingList = document.getElementById('pending-list');
+        const doneList = document.getElementById('done-list');
+
+        pendingList.innerHTML = data.pending.length
+          ? data.pending.map(f => `<li><span class="name"><span class="dot pending"></span>${f}</span><span class="status-badge pending-badge">Pending</span></li>`).join('')
+          : '<li class="empty-msg">No pending files</li>';
+
+        doneList.innerHTML = data.completed.length
+          ? data.completed.map(f => `<li><span class="name"><span class="dot done"></span>${f}</span><span class="status-badge done-badge">Done</span></li>`).join('')
+          : '<li class="empty-msg">No completed files</li>';
+      } catch {}
+    }
+
+    // ── UI helpers ──
+    function showDash() {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dash-screen').style.display = 'block';
+      document.getElementById('customer-name').textContent = customer;
+    }
+
+    let toastTimer;
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast ' + (type || '') + ' show';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Auto-refresh status every 30s
+    setInterval(refreshStatus, 30000);
+  </script>
 </body>
 </html>
