@@ -80,28 +80,39 @@ router.get('/stats', requireAuth, requireAdmin, (req, res) => {
 
 // POST /api/admin/track-cost — record API cost for a homework run
 // Called by the Autonet orchestration after processing
+// Stores full audit trail: model, prompt/completion tokens, rate used
 router.post('/track-cost', requireAuth, requireAdmin, (req, res) => {
-  const { customer, homeworkName, tokensUsed, cost } = req.body;
+  const { customer, homeworkName, model, promptTokens, completionTokens, inputRatePerM, outputRatePerM } = req.body;
   if (!customer || !homeworkName) {
     return res.status(400).json({ error: 'customer and homeworkName required' });
   }
+
+  const pTokens = promptTokens || 0;
+  const cTokens = completionTokens || 0;
+  const totalTokens = pTokens + cTokens;
+  const inRate = inputRatePerM || 0.14;
+  const outRate = outputRatePerM || 0.28;
+  const cost = (pTokens * inRate / 1000000) + (cTokens * outRate / 1000000);
 
   const costs = loadCosts();
   if (!costs[customer]) {
     costs[customer] = { totalCost: 0, totalTokens: 0, homeworks: [] };
   }
 
-  costs[customer].totalCost += cost || 0;
-  costs[customer].totalTokens += tokensUsed || 0;
+  costs[customer].totalCost += cost;
+  costs[customer].totalTokens += totalTokens;
   costs[customer].homeworks.push({
     name: homeworkName,
-    tokens: tokensUsed || 0,
-    cost: cost || 0,
+    model: model || 'deepseek/deepseek-v4-flash',
+    promptTokens: pTokens,
+    completionTokens: cTokens,
+    totalTokens,
+    cost: Math.round(cost * 100000) / 100000,
     date: new Date().toISOString().split('T')[0]
   });
 
   fs.writeFileSync(COST_FILE, JSON.stringify(costs, null, 2));
-  res.json({ ok: true });
+  res.json({ ok: true, cost, breakdown: `${pTokens} × $${inRate}/1M = $${(pTokens * inRate / 1000000).toFixed(6)} + ${cTokens} × $${outRate}/1M = $${(cTokens * outRate / 1000000).toFixed(6)} = $${cost.toFixed(6)}` });
 });
 
 module.exports = { router };

@@ -877,9 +877,18 @@
           const c = u.cost;
           totalCost += c.totalCost;
           costHtml += `<tr><td><strong>${u.name}</strong></td><td class="num cost">$${c.totalCost.toFixed(4)}</td><td class="num">${c.totalTokens.toLocaleString()}</td><td class="num">${c.homeworks.length}</td></tr>`;
-        });
 
-        userHtml += `<tr style="border-top:2px solid var(--accent)"><td><strong>Total</strong></td><td></td><td class="num">${data.totalPending}</td><td class="num">${data.totalCompleted}</td><td class="num"><strong>${data.totalFiles}</strong></td></tr>`;
+          // Per-homework details
+          if (c.homeworks.length) {
+            costHtml += `<tr><td colspan="4" style="padding:0;"><details style="padding:4px 12px 8px 12px;"><summary style="font-size:12px;color:var(--text-dim);cursor:pointer;">Détails</summary>`;
+            c.homeworks.forEach(h => {
+              costHtml += `<div style="font-size:12px;color:var(--text-dim);padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">`;
+              costHtml += `<span>${h.date} — ${h.name}</span>`;
+              costHtml += `<span style="font-family:'JetBrains Mono',monospace;">${h.promptTokens}p+${h.completionTokens}c = ${h.totalTokens}t → <span style="color:var(--success);">$${h.cost.toFixed(6)}</span></span>`;
+              costHtml += `</div>`;
+            });
+            costHtml += `</details></td></tr>`;
+          }
         userHtml += '</table></div>';
         usersDiv.innerHTML = userHtml;
 
