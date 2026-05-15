@@ -1,0 +1,14 @@
+{
+  "matisse": {
+    "totalCost": 0.0021,
+    "totalTokens": 1500,
+    "homeworks": [
+      {
+        "name": "Math HW - Ex 3",
+        "tokens": 1500,
+        "cost": 0.0021,
+        "date": "2026-05-15"
+      }
+    ]
+  }
+}

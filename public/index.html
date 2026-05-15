@@ -472,6 +472,49 @@
     .toast.success { border-color: rgba(34,197,94,0.3); }
     .toast.error { border-color: rgba(239,68,68,0.3); }
 
+    /* Admin */
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .admin-table th {
+      text-align: left;
+      padding: 8px 12px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .admin-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-table tr:last-child td {
+      border-bottom: none;
+    }
+    .admin-table .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+    .admin-table .cost { color: var(--success); }
+    .admin-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .admin-empty {
+      color: var(--text-dim);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+    }
+
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
@@ -518,11 +561,40 @@
       </div>
     </div>
 
+    <!-- ADMIN DASHBOARD (hidden by default) -->
+    <div id="admin-screen" style="display:none;">
+      <div class="dash-header">
+        <div class="greeting">🔐 <strong>Admin</strong> — Console Autonet</div>
+        <button class="logout-btn" id="admin-logout-btn">Quitter</button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="num pending" id="admin-total-files">0</div>
+          <div class="label">Fichiers totaux</div>
+        </div>
+        <div class="stat-card">
+          <div class="num done" id="admin-total-pending">0</div>
+          <div class="label">En attente</div>
+        </div>
+        <div class="stat-card">
+          <div class="num done" id="admin-total-done">0</div>
+          <div class="label">Terminés</div>
+        </div>
+      </div>
+
+      <div class="section-title">👥 Utilisateurs</div>
+      <div id="admin-users"></div>
+
+      <div class="section-title">💰 Coûts API</div>
+      <div id="admin-costs"></div>
+    </div>
+
     <!-- DASHBOARD -->
     <div id="dash-screen">
       <div class="dash-header">
         <div class="greeting"><strong id="customer-name">—</strong>'s console</div>
-        <button class="logout-btn" id="logout-btn">Exit</button>
+        <button class="logout-btn" id="logout-btn">Quitter</button>
       </div>
 
       <div class="stats-row">
@@ -621,15 +693,18 @@
     }
 
     // ── Logout ──
-    document.getElementById('logout-btn').addEventListener('click', () => {
+    function logout() {
       localStorage.removeItem('autonet_token');
       localStorage.removeItem('autonet_customer');
       token = null; customer = null;
       document.getElementById('dash-screen').style.display = 'none';
+      document.getElementById('admin-screen').style.display = 'none';
       document.getElementById('login-screen').style.display = 'block';
       document.getElementById('access-code').value = '';
       document.getElementById('access-code').focus();
-    });
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', logout);
 
     // ── Upload ──
     const dropZone = document.getElementById('drop-zone');
@@ -758,8 +833,60 @@
     // ── UI helpers ──
     function showDash() {
       document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('dash-screen').style.display = 'block';
-      document.getElementById('customer-name').textContent = customer;
+      if (customer === 'admin') {
+        document.getElementById('admin-screen').style.display = 'block';
+        getAdminStats();
+      } else {
+        document.getElementById('dash-screen').style.display = 'block';
+        document.getElementById('customer-name').textContent = customer;
+      }
+    }
+
+    // ── Admin logout ──
+    document.getElementById('admin-logout-btn').addEventListener('click', logout);
+
+    async function getAdminStats() {
+      try {
+        const res = await fetch(API + '/api/admin/stats', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (!res.ok) return;
+
+        document.getElementById('admin-total-files').textContent = data.totalFiles;
+        document.getElementById('admin-total-pending').textContent = data.totalPending;
+        document.getElementById('admin-total-done').textContent = data.totalCompleted;
+
+        const usersDiv = document.getElementById('admin-users');
+        const costsDiv = document.getElementById('admin-costs');
+
+        if (!data.perUser.length) {
+          usersDiv.innerHTML = '<div class="admin-empty">Aucun utilisateur</div>';
+          costsDiv.innerHTML = '<div class="admin-empty">Aucun coût enregistré</div>';
+          return;
+        }
+
+        let userHtml = '<div class="admin-card"><table class="admin-table">' +
+          '<tr><th>Utilisateur</th><th>Code</th><th>En attente</th><th>Terminés</th><th>Total</th></tr>';
+        let totalCost = 0;
+        let costHtml = '<div class="admin-card"><table class="admin-table">' +
+          '<tr><th>Utilisateur</th><th>Coût total</th><th>Tokens</th><th>Devoirs</th></tr>';
+
+        data.perUser.forEach(u => {
+          userHtml += `<tr><td><strong>${u.name}</strong></td><td class="num">${u.code}</td><td class="num">${u.pending}</td><td class="num">${u.completed}</td><td class="num">${u.pending + u.completed}</td></tr>`;
+          const c = u.cost;
+          totalCost += c.totalCost;
+          costHtml += `<tr><td><strong>${u.name}</strong></td><td class="num cost">$${c.totalCost.toFixed(4)}</td><td class="num">${c.totalTokens.toLocaleString()}</td><td class="num">${c.homeworks.length}</td></tr>`;
+        });
+
+        userHtml += `<tr style="border-top:2px solid var(--accent)"><td><strong>Total</strong></td><td></td><td class="num">${data.totalPending}</td><td class="num">${data.totalCompleted}</td><td class="num"><strong>${data.totalFiles}</strong></td></tr>`;
+        userHtml += '</table></div>';
+        usersDiv.innerHTML = userHtml;
+
+        costHtml += `<tr style="border-top:2px solid var(--accent)"><td><strong>Total</strong></td><td class="num cost"><strong>$${totalCost.toFixed(4)}</strong></td><td></td><td></td></tr>`;
+        costHtml += '</table></div>';
+        costsDiv.innerHTML = costHtml;
+      } catch {}
     }
 
     let toastTimer;

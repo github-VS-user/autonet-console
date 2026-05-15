@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const { router: authRouter } = require('./auth');
 const { router: uploadRouter } = require('./upload');
+const { router: adminRouter } = require('./admin');
 
 const app = express();
 const PORT = process.env.PORT || 3456;
@@ -14,6 +15,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // API routes
 app.use('/api/auth', authRouter);
 app.use('/api', uploadRouter);
+app.use('/api/admin', adminRouter);
 
 // Serve frontend for all other routes (SPA-friendly)
 app.get('*', (req, res) => {
