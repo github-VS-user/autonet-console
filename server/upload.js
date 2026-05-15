@@ -28,12 +28,20 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'application/pdf') {
+    const allowed = [
+      'application/pdf',
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Only PDF files allowed'));
+      cb(new Error('File type not supported (PDF, images, DOCX, PPTX only)'));
     }
   }
 });
@@ -68,7 +76,7 @@ router.get('/status', requireAuth, (req, res) => {
   try {
     if (fs.existsSync(incoming)) {
       fs.readdirSync(incoming)
-        .filter(f => f.endsWith('.pdf') || f.endsWith('.txt'))
+        .filter(f => !f.endsWith('.context.txt'))
         .forEach(f => pending.push(f));
     }
   } catch {}
@@ -76,7 +84,7 @@ router.get('/status', requireAuth, (req, res) => {
   try {
     if (fs.existsSync(completed)) {
       fs.readdirSync(completed)
-        .filter(f => f.endsWith('.pdf') || f.endsWith('.txt'))
+        .filter(f => !f.endsWith('.context.txt'))
         .forEach(f => done.push(f));
     }
   } catch {}

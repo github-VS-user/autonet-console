@@ -539,19 +539,19 @@
       <div class="card">
         <div class="upload-zone" id="drop-zone">
           <div class="icon">📄</div>
-          <div class="text">Drop a <strong>PDF</strong> here, or click to select</div>
+          <div class="text">Déposez un fichier <strong>(PDF, images, DOCX, PPTX)</strong></div>
           <div class="file-name" id="file-name"></div>
-          <input type="file" id="file-input" accept=".pdf,application/pdf">
+          <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.ppt,.pptx">
         </div>
 
-        <textarea class="context-input" id="context-text" placeholder="Optional context — e.g. &quot;Tuesday's homework, exercise 3, use substitution method&quot;"></textarea>
+        <textarea class="context-input" id="context-text" placeholder="Contexte optionnel — ex. &quot;Devoir de mardi, exercice 3&quot;"></textarea>
 
         <div class="upload-btn-wrap" style="display:flex;gap:8px;">
           <button class="btn btn-primary" id="upload-btn" style="flex:1;">
-            <span id="upload-text">Upload with PDF</span>
+            <span id="upload-text">Téléverser un fichier</span>
           </button>
           <button class="btn btn-primary" id="text-btn" style="flex:1;">
-            <span id="text-btn-text">Submit Text Only</span>
+            <span id="text-btn-text">Texte seul</span>
           </button>
         </div>
       </div>
@@ -649,8 +649,11 @@
     });
 
     function handleFile(file) {
-      if (file.type !== 'application/pdf') {
-        showToast('Seuls les fichiers PDF sont acceptés', 'error');
+      const allowedTypes = ['application/pdf','image/jpeg','image/png','image/gif','image/webp',
+        'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+      if (!allowedTypes.includes(file.type)) {
+        showToast('Type de fichier non supporté (PDF, images, DOCX, PPTX)', 'error');
         return;
       }
       selectedFile = file;
@@ -693,7 +696,7 @@
     }
 
     async function upload() {
-      if (!selectedFile) { showToast('Sélectionnez d\'abord un PDF', 'error'); return; }
+      if (!selectedFile) { showToast('Sélectionnez d\'abord un fichier', 'error'); return; }
       const btn = document.getElementById('upload-btn');
       const txt = document.getElementById('upload-text');
       btn.disabled = true;
