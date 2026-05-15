@@ -115,4 +115,86 @@ router.post('/track-cost', requireAuth, requireAdmin, (req, res) => {
   res.json({ ok: true, cost, breakdown: `${pTokens} × $${inRate}/1M = $${(pTokens * inRate / 1000000).toFixed(6)} + ${cTokens} × $${outRate}/1M = $${(cTokens * outRate / 1000000).toFixed(6)} = $${cost.toFixed(6)}` });
 });
 
+// GET /api/admin/billing — full financial picture
+router.get('/billing', requireAuth, requireAdmin, (req, res) => {
+  const configPath = path.join(DATA_DIR, 'admin-config.json');
+  let config = { fixedCosts: {}, plans: {}, customers: {} };
+  try {
+    if (fs.existsSync(configPath)) {
+      config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    }
+  } catch {}
+
+  const costs = loadCosts();
+  const codesPath = path.join(DATA_DIR, 'access-codes.json');
+  let codes = {};
+  try { codes = JSON.parse(fs.readFileSync(codesPath, 'utf-8')); } catch {}
+
+  // Fixed costs breakdown
+  const vpsMonthly = config.fixedCosts?.vps?.monthlyCost || 0;
+  const domainYearly = config.fixedCosts?.domain?.yearlyCost || 0;
+  const domainMonthly = domainYearly / 12;
+  const totalFixedMonthly = vpsMonthly + domainMonthly;
+
+  // Per-customer breakdown
+  const customers = [];
+  let totalAPICost = 0;
+  let totalHomeworkCount = 0;
+
+  Object.keys(config.customers || {}).forEach(name => {
+    const cfg = config.customers[name];
+    const plan = config.plans?.[cfg.plan] || { name: '—', monthlyPrice: 0, homeworkLimit: 0 };
+    const usage = costs[name] || { totalCost: 0, totalTokens: 0, homeworks: [] };
+    const code = Object.keys(codes).find(k => codes[k] === name) || '—';
+
+    totalAPICost += usage.totalCost;
+    totalHomeworkCount += usage.homeworks.length;
+
+    customers.push({
+      name,
+      code,
+      plan: cfg.plan,
+      planName: plan.name,
+      planPrice: plan.monthlyPrice,
+      homeworkLimit: plan.homeworkLimit,
+      apiCost: usage.totalCost,
+      totalTokens: usage.totalTokens,
+      homeworksDone: usage.homeworks.length,
+      // Profit per customer: plan price - API cost - shared cost share
+      grossProfit: plan.monthlyPrice - usage.totalCost,
+      homeworks: usage.homeworks.slice(-10) // last 10
+    });
+  });
+
+  // Shared costs per customer
+  const customerCount = customers.length || 1;
+  const sharedCostPerCustomer = totalFixedMonthly / customerCount;
+
+  const totalRevenue = customers.reduce((s, c) => s + c.planPrice, 0);
+  const totalNetProfit = totalRevenue - totalFixedMonthly - totalAPICost;
+
+  res.json({
+    fixedCosts: {
+      vps: { name: config.fixedCosts?.vps?.name || 'VPS', monthly: vpsMonthly },
+      domain: { name: config.fixedCosts?.domain?.name || 'Domaine', yearly: domainYearly, monthly: domainMonthly },
+      totalMonthly: totalFixedMonthly
+    },
+    apiTotals: {
+      totalCost: totalAPICost,
+      totalTokens: Object.values(costs).reduce((s, c) => s + (c.totalTokens || 0), 0)
+    },
+    revenue: {
+      totalMonthly: totalRevenue,
+      totalYearly: totalRevenue * 12
+    },
+    profit: {
+      monthlyNet: totalNetProfit,
+      yearlyNet: totalNetProfit * 12,
+      marginPercent: totalRevenue > 0 ? Math.round((totalNetProfit / totalRevenue) * 100) : 0
+    },
+    customers,
+    availablePlans: config.plans || {}
+  });
+});
+
 module.exports = { router };

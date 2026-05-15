@@ -500,11 +500,12 @@
       font-weight: 600;
     }
     .admin-table .cost { color: var(--success); }
-    .admin-card {
+        .admin-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       overflow: hidden;
+      margin-bottom: 16px;
     }
     .admin-empty {
       color: var(--text-dim);
@@ -568,26 +569,16 @@
         <button class="logout-btn" id="admin-logout-btn">Quitter</button>
       </div>
 
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="num pending" id="admin-total-files">0</div>
-          <div class="label">Fichiers totaux</div>
-        </div>
-        <div class="stat-card">
-          <div class="num done" id="admin-total-pending">0</div>
-          <div class="label">En attente</div>
-        </div>
-        <div class="stat-card">
-          <div class="num done" id="admin-total-done">0</div>
-          <div class="label">Terminés</div>
-        </div>
-      </div>
+      <!-- Financial summary -->
+      <div id="billing-summary"></div>
 
-      <div class="section-title">👥 Utilisateurs</div>
-      <div id="admin-users"></div>
+      <!-- Per-user breakdown -->
+      <div class="section-title">👥 Clients</div>
+      <div id="billing-clients"></div>
 
-      <div class="section-title">💰 Coûts API</div>
-      <div id="admin-costs"></div>
+      <!-- Plans config -->
+      <div class="section-title">📋 Plans</div>
+      <div id="billing-plans"></div>
     </div>
 
     <!-- DASHBOARD -->
@@ -847,55 +838,93 @@
 
     async function getAdminStats() {
       try {
-        const res = await fetch(API + '/api/admin/stats', {
+        const res = await fetch(API + '/api/admin/billing', {
           headers: { 'Authorization': 'Bearer ' + token }
         });
         const data = await res.json();
         if (!res.ok) return;
 
-        document.getElementById('admin-total-files').textContent = data.totalFiles;
-        document.getElementById('admin-total-pending').textContent = data.totalPending;
-        document.getElementById('admin-total-done').textContent = data.totalCompleted;
+        const sumDiv = document.getElementById('billing-summary');
+        let html = '';
 
-        const usersDiv = document.getElementById('admin-users');
-        const costsDiv = document.getElementById('admin-costs');
+        // === TOP METRICS ROW ===
+        html += '<div class="stats-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">' +
+          '<div class="stat-card"><div class="num pending">' + data.fixedCosts.totalMonthly.toFixed(2) + '$</div><div class="label">Frais fixes/mois</div></div>' +
+          '<div class="stat-card"><div class="num done">' + data.apiTotals.totalCost.toFixed(4) + '$</div><div class="label">API/mois</div></div>' +
+          '<div class="stat-card"><div class="num pending">' + data.revenue.totalMonthly.toFixed(2) + '$</div><div class="label">Revenu/mois</div></div>' +
+          '<div class="stat-card"><div class="num ' + (data.profit.monthlyNet >= 0 ? 'done' : '') + '">' + data.profit.monthlyNet.toFixed(2) + '$</div><div class="label">Bénéfice/mois (' + data.profit.marginPercent + '%)</div></div>' +
+          '</div>';
 
-        if (!data.perUser.length) {
-          usersDiv.innerHTML = '<div class="admin-empty">Aucun utilisateur</div>';
-          costsDiv.innerHTML = '<div class="admin-empty">Aucun coût enregistré</div>';
-          return;
-        }
+        // === FIXED COSTS BREAKDOWN ===
+        html += '<div class="card" style="margin-bottom:16px;"><table class="admin-table">' +
+          '<tr><th>Type</th><th>Détail</th><th>Montant</th><th>Par mois</th></tr>' +
+          '<tr><td>🖥️ VPS</td><td>' + data.fixedCosts.vps.name + '</td><td class="num">' + data.fixedCosts.vps.monthly.toFixed(2) + '$</td><td class="num">' + data.fixedCosts.vps.monthly.toFixed(2) + '$</td></tr>' +
+          '<tr><td>🌐 Domaine</td><td>' + data.fixedCosts.domain.name + '</td><td class="num">' + data.fixedCosts.domain.yearly.toFixed(2) + '$/an</td><td class="num">' + data.fixedCosts.domain.monthly.toFixed(2) + '$</td></tr>' +
+          '<tr style="border-top:2px solid var(--accent)"><td><strong>Total fixe</strong></td><td></td><td></td><td class="num"><strong>' + data.fixedCosts.totalMonthly.toFixed(2) + '$</strong></td></tr>' +
+          '</table></div>';
 
-        let userHtml = '<div class="admin-card"><table class="admin-table">' +
-          '<tr><th>Utilisateur</th><th>Code</th><th>En attente</th><th>Terminés</th><th>Total</th></tr>';
-        let totalCost = 0;
-        let costHtml = '<div class="admin-card"><table class="admin-table">' +
-          '<tr><th>Utilisateur</th><th>Coût total</th><th>Tokens</th><th>Devoirs</th></tr>';
+        // === YEARLY PROJECTION ===
+        html += '<div class="card" style="margin-bottom:16px;"><table class="admin-table">' +
+          '<tr><th>Métrique</th><th>Mensuel</th><th>Annuel</th></tr>' +
+          '<tr><td>Revenu</td><td class="num">' + data.revenue.totalMonthly.toFixed(2) + '$</td><td class="num">' + data.revenue.totalYearly.toFixed(2) + '$</td></tr>' +
+          '<tr><td>Bénéfice net</td><td class="num">' + data.profit.monthlyNet.toFixed(2) + '$</td><td class="num">' + data.profit.yearlyNet.toFixed(2) + '$</td></tr>' +
+          '<tr><td>Marge</td><td class="num cost">' + (data.profit.marginPercent >= 0 ? '+' : '') + data.profit.marginPercent + '%</td><td></td></tr>' +
+          '</table></div>';
 
-        data.perUser.forEach(u => {
-          userHtml += `<tr><td><strong>${u.name}</strong></td><td class="num">${u.code}</td><td class="num">${u.pending}</td><td class="num">${u.completed}</td><td class="num">${u.pending + u.completed}</td></tr>`;
-          const c = u.cost;
-          totalCost += c.totalCost;
-          costHtml += `<tr><td><strong>${u.name}</strong></td><td class="num cost">$${c.totalCost.toFixed(4)}</td><td class="num">${c.totalTokens.toLocaleString()}</td><td class="num">${c.homeworks.length}</td></tr>`;
+        sumDiv.innerHTML = html;
+
+        // === CLIENTS TABLE ===
+        const clientsDiv = document.getElementById('billing-clients');
+        let clientHtml = '<div class="admin-card"><table class="admin-table">' +
+          '<tr><th>Client</th><th>Code</th><th>Forfait</th><th>Prix</th><th>API coût</th><th>Devoirs</th><th>Bénéfice</th></tr>';
+
+        data.customers.forEach(c => {
+          const profitColor = c.grossProfit >= 0 ? 'var(--success)' : '#ef4444';
+          clientHtml += '<tr>' +
+            '<td><strong>' + c.name + '</strong></td>' +
+            '<td class="num">' + c.code + '</td>' +
+            '<td>' + (c.planName || c.plan) + '</td>' +
+            '<td class="num">' + c.planPrice.toFixed(2) + '$</td>' +
+            '<td class="num">' + c.apiCost.toFixed(4) + '$</td>' +
+            '<td class="num">' + c.homeworksDone + '/' + (c.homeworkLimit === -1 ? '∞' : c.homeworkLimit) + '</td>' +
+            '<td class="num" style="color:' + profitColor + ';">' + (c.grossProfit >= 0 ? '+' : '') + c.grossProfit.toFixed(4) + '$</td>' +
+            '</tr>';
 
           // Per-homework details
           if (c.homeworks.length) {
-            costHtml += `<tr><td colspan="4" style="padding:0;"><details style="padding:4px 12px 8px 12px;"><summary style="font-size:12px;color:var(--text-dim);cursor:pointer;">Détails</summary>`;
-            c.homeworks.forEach(h => {
-              costHtml += `<div style="font-size:12px;color:var(--text-dim);padding:4px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">`;
-              costHtml += `<span>${h.date} — ${h.name}</span>`;
-              costHtml += `<span style="font-family:'JetBrains Mono',monospace;">${h.promptTokens}p+${h.completionTokens}c = ${h.totalTokens}t → <span style="color:var(--success);">$${h.cost.toFixed(6)}</span></span>`;
-              costHtml += `</div>`;
+            clientHtml += '<tr><td colspan="7" style="padding:0;"><details style="padding:4px 12px 8px 24px;"><summary style="font-size:12px;color:var(--text-dim);cursor:pointer;">Détails des devoirs</summary>';
+            c.homeworks.slice().reverse().forEach(h => {
+              const modelShort = h.model ? h.model.split('/').pop() : '—';
+              clientHtml += '<div style="font-size:12px;color:var(--text-dim);padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">' +
+                '<span>' + h.date + ' — ' + h.name + '</span>' +
+                '<span style="font-family:\'JetBrains Mono\',monospace;">' + modelShort + ' · ' + h.promptTokens + 'p+' + h.completionTokens + 'c=' + h.totalTokens + 't → <span style="color:var(--success);">$' + h.cost.toFixed(6) + '</span></span>' +
+                '</div>';
             });
-            costHtml += `</details></td></tr>`;
+            clientHtml += '</details></td></tr>';
           }
-        userHtml += '</table></div>';
-        usersDiv.innerHTML = userHtml;
+        });
 
-        costHtml += `<tr style="border-top:2px solid var(--accent)"><td><strong>Total</strong></td><td class="num cost"><strong>$${totalCost.toFixed(4)}</strong></td><td></td><td></td></tr>`;
-        costHtml += '</table></div>';
-        costsDiv.innerHTML = costHtml;
-      } catch {}
+        clientHtml += '</table></div>';
+        clientsDiv.innerHTML = clientHtml;
+
+        // === PLANS ===
+        const plansDiv = document.getElementById('billing-plans');
+        let plansHtml = '<div class="admin-card"><table class="admin-table">' +
+          '<tr><th>Plan</th><th>Description</th><th>Prix/mois</th><th>Limite</th></tr>';
+        Object.keys(data.availablePlans).forEach(key => {
+          const p = data.availablePlans[key];
+          const count = data.customers.filter(c => c.plan === key).length;
+          plansHtml += '<tr>' +
+            '<td><strong>' + p.name + '</strong> <span style="color:var(--text-dim);font-size:11px;">(' + count + ' client' + (count > 1 ? 's' : '') + ')</span></td>' +
+            '<td>' + (p.description || '') + '</td>' +
+            '<td class="num">' + p.monthlyPrice.toFixed(2) + '$</td>' +
+            '<td class="num">' + (p.homeworkLimit === -1 ? 'Illimité' : p.homeworkLimit + '/mois') + '</td>' +
+            '</tr>';
+        });
+        plansHtml += '</table></div>';
+        plansDiv.innerHTML = plansHtml;
+
+      } catch (e) { console.error(e); }
     }
 
     let toastTimer;
@@ -909,6 +938,7 @@
 
     // Auto-refresh status every 30s
     setInterval(refreshStatus, 30000);
+    setInterval(() => { if (customer === 'admin') getAdminStats(); }, 60000);
   </script>
 </body>
 </html>

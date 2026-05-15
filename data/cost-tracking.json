@@ -1,17 +1,1 @@
-{
-  "matisse": {
-    "totalCost": 0.00026040000000000004,
-    "totalTokens": 1550,
-    "homeworks": [
-      {
-        "name": "Algebra Ex 3",
-        "model": "deepseek/deepseek-v4-flash",
-        "promptTokens": 1240,
-        "completionTokens": 310,
-        "totalTokens": 1550,
-        "cost": 0.00026,
-        "date": "2026-05-15"
-      }
-    ]
-  }
-}
+{}

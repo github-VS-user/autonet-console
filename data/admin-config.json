@@ -1,0 +1,41 @@
+{
+  "fixedCosts": {
+    "vps": {
+      "name": "VPS Hostinger K-H-M1",
+      "monthlyCost": 12.99,
+      "currency": "USD"
+    },
+    "domain": {
+      "name": "autonet.live (Namecheap)",
+      "yearlyCost": 14.98,
+      "currency": "USD"
+    }
+  },
+  "plans": {
+    "basic": {
+      "name": "Basic",
+      "description": "5 devoirs/mois",
+      "monthlyPrice": 5,
+      "homeworkLimit": 5,
+      "color": "#22c55e"
+    },
+    "standard": {
+      "name": "Standard",
+      "description": "15 devoirs/mois",
+      "monthlyPrice": 10,
+      "homeworkLimit": 15,
+      "color": "#00e6ff"
+    },
+    "premium": {
+      "name": "Premium",
+      "description": "Illimité",
+      "monthlyPrice": 20,
+      "homeworkLimit": -1,
+      "color": "#8b5cf6"
+    }
+  },
+  "customers": {
+    "matisse": { "plan": "basic" },
+    "max": { "plan": "standard" }
+  }
+}
