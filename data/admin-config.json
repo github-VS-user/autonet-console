@@ -2,12 +2,12 @@
   "fixedCosts": {
     "vps": {
       "name": "VPS Hostinger K-H-M1",
-      "monthlyCost": 12.99,
+      "monthlyCost": 14.99,
       "currency": "USD"
     },
     "domain": {
       "name": "autonet.live (Namecheap)",
-      "yearlyCost": 14.98,
+      "yearlyCost": 12.98,
       "currency": "USD"
     }
   },
@@ -35,7 +35,11 @@
     }
   },
   "customers": {
-    "matisse": { "plan": "basic" },
-    "max": { "plan": "standard" }
+    "matisse": {
+      "plan": "basic"
+    },
+    "max": {
+      "plan": "standard"
+    }
   }
 }

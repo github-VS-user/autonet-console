@@ -1,944 +1,449 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autonet Console</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
-    :root {
-      --bg: #07080a;
-      --surface: rgba(255,255,255,0.03);
-      --surface-hover: rgba(255,255,255,0.06);
-      --border: rgba(255,255,255,0.06);
-      --border-active: rgba(0,230,255,0.3);
-      --text: #e8eaed;
-      --text-dim: rgba(255,255,255,0.35);
-      --accent: #00e6ff;
-      --accent-glow: rgba(0,230,255,0.15);
-      --accent2: #8b5cf6;
-      --accent2-glow: rgba(139,92,246,0.12);
-      --success: #22c55e;
-      --radius: 12px;
-      --radius-sm: 8px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { height: 100%; }
-
-    body {
-      font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow-x: hidden;
-      position: relative;
-    }
-
-    /* Animated background */
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background:
-        radial-gradient(ellipse 80% 60% at 30% 20%, rgba(0,230,255,0.04) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 70% 80%, rgba(139,92,246,0.04) 0%, transparent 60%);
-      pointer-events: none;
-    }
-
-    /* Grid overlay */
-    .grid {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-    }
-
-    .container {
-      position: relative;
-      width: 100%;
-      max-width: 440px;
-      padding: 20px;
-      z-index: 1;
-    }
-
-    /* Login screen */
-    #login-screen {
-      animation: fadeUp 0.6s ease;
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-
-    .logo .icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      margin-bottom: 16px;
-      font-size: 24px;
-    }
-
-    .logo h1 {
-      font-size: 24px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .logo p {
-      color: var(--text-dim);
-      font-size: 14px;
-      margin-top: 6px;
-    }
-
-    .card {
-      background: var(--surface);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      transition: border-color 0.3s;
-    }
-
-    .card:focus-within {
-      border-color: var(--border-active);
-    }
-
-    .input-group {
-      margin-bottom: 16px;
-    }
-
-    .input-group label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-      margin-bottom: 8px;
-    }
-
-    .input-group input[type="text"],
-    .input-group input[type="password"] {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-size: 16px;
-      font-family: 'JetBrains Mono', monospace;
-      outline: none;
-      transition: all 0.3s;
-      letter-spacing: 4px;
-      text-align: center;
-    }
-
-    .input-group input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 20px var(--accent-glow);
-      background: rgba(255,255,255,0.06);
-    }
-
-    .input-group input::placeholder {
-      color: rgba(255,255,255,0.15);
-      letter-spacing: 1px;
-      font-family: 'Inter', sans-serif;
-      text-align: center;
-    }
-
-    .btn {
-      width: 100%;
-      padding: 12px 20px;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent2), var(--accent));
-      color: white;
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 30px rgba(0,230,255,0.2);
-    }
-
-    .btn-primary:active {
-      transform: translateY(0);
-    }
-
-    .btn-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .btn-danger {
-      background: rgba(239,68,68,0.1);
-      color: #ef4444;
-      border: 1px solid rgba(239,68,68,0.2);
-    }
-
-    .btn-danger:hover {
-      background: rgba(239,68,68,0.2);
-    }
-
-    .error-msg {
-      color: #ef4444;
-      font-size: 13px;
-      text-align: center;
-      margin-top: 12px;
-      min-height: 20px;
-      transition: opacity 0.3s;
-    }
-
-    .error-msg:empty {
-      opacity: 0;
-    }
-
-    /* Dashboard screen */
-    #dash-screen {
-      display: none;
-      animation: fadeUp 0.5s ease;
-    }
-
-    .dash-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 32px;
-    }
-
-    .dash-header .greeting {
-      font-size: 14px;
-      color: var(--text-dim);
-    }
-
-    .dash-header .greeting strong {
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .dash-header .logout-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      padding: 8px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .dash-header .logout-btn:hover {
-      color: #ef4444;
-      border-color: rgba(239,68,68,0.3);
-      background: rgba(239,68,68,0.05);
-    }
-
-    .stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-align: center;
-    }
-
-    .stat-card .num {
-      font-size: 28px;
-      font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .stat-card .num.pending { color: var(--accent); }
-    .stat-card .num.done { color: var(--success); }
-
-    .stat-card .label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-      margin-top: 4px;
-    }
-
-    .upload-zone {
-      background: var(--surface);
-      border: 1.5px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin-bottom: 24px;
-      position: relative;
-    }
-
-    .upload-zone:hover,
-    .upload-zone.dragover {
-      border-color: var(--accent);
-      background: var(--accent-glow);
-    }
-
-    .upload-zone .icon {
-      font-size: 32px;
-      margin-bottom: 8px;
-      opacity: 0.6;
-    }
-
-    .upload-zone .text {
-      color: var(--text-dim);
-      font-size: 14px;
-    }
-
-    .upload-zone .text strong {
-      color: var(--accent);
-    }
-
-    .upload-zone input[type="file"] {
-      display: none;
-    }
-
-    .upload-zone .file-name {
-      margin-top: 8px;
-      font-size: 13px;
-      color: var(--accent);
-      font-weight: 500;
-    }
-
-    .context-input {
-      width: 100%;
-      padding: 12px 16px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      resize: none;
-      min-height: 60px;
-      transition: all 0.3s;
-      margin-top: 12px;
-    }
-
-    .context-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 15px var(--accent-glow);
-    }
-
-    .context-input::placeholder {
-      color: rgba(255,255,255,0.2);
-    }
-
-    .upload-btn-wrap {
-      margin-top: 12px;
-    }
-
-    /* Status section */
-    .section-title {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-dim);
-      margin-bottom: 12px;
-      margin-top: 24px;
-    }
-
-    .file-list {
-      list-style: none;
-    }
-
-    .file-list li {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      margin-bottom: 6px;
-      font-size: 13px;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .file-list li .name {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .file-list li .name .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .file-list li .name .dot.pending { background: var(--accent); }
-    .file-list li .name .dot.done { background: var(--success); }
-
-    .file-list li .status-badge {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .file-list li .status-badge.pending-badge {
-      color: var(--accent);
-      background: rgba(0,230,255,0.1);
-    }
-
-    .file-list li .status-badge.done-badge {
-      color: var(--success);
-      background: rgba(34,197,94,0.1);
-    }
-
-    .file-list .empty-msg {
-      color: var(--text-dim);
-      font-size: 13px;
-      text-align: center;
-      padding: 20px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-sm);
-    }
-
-    /* Spinner */
-    .spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255,255,255,0.2);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-
-    /* Toast notification */
-    .toast {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-100px);
-      background: rgba(0,0,0,0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 20px;
-      font-size: 14px;
-      z-index: 100;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      max-width: 90%;
-      text-align: center;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-    }
-
-    .toast.success { border-color: rgba(34,197,94,0.3); }
-    .toast.error { border-color: rgba(239,68,68,0.3); }
-
-    /* Admin */
-    .admin-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .admin-table th {
-      text-align: left;
-      padding: 8px 12px;
-      color: var(--text-dim);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-    }
-    .admin-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-    .admin-table tr:last-child td {
-      border-bottom: none;
-    }
-    .admin-table .num {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
-    }
-    .admin-table .cost { color: var(--success); }
-        .admin-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .admin-empty {
-      color: var(--text-dim);
-      font-size: 13px;
-      text-align: center;
-      padding: 24px;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-sm);
-    }
-
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @media (max-width: 480px) {
-      .container { padding: 16px; }
-      .stats-row { gap: 8px; }
-      .stat-card { padding: 12px; }
-      .stat-card .num { font-size: 22px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Console Autonet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07080a;--surface:rgba(255,255,255,.03);--surface-h:rgba(255,255,255,.06);--border:rgba(255,255,255,.06);--border-a:rgba(0,230,255,.3);--text:#e8eaed;--dim:rgba(255,255,255,.35);--accent:#00e6ff;--a-glow:rgba(0,230,255,.12);--a2:#8b5cf6;--a2-glow:rgba(139,92,246,.1);--ok:#22c55e;--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 30% 20%,rgba(0,230,255,.04) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 70% 80%,rgba(139,92,246,.04) 0%,transparent 60%);pointer-events:none;z-index:-1}
+.grid{position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:-1}
+.container{position:relative;z-index:1;width:100%;max-width:100%;padding:16px;margin:0 auto}
+@media(min-width:768px){.container{padding:24px;max-width:1100px}}
+@media(min-width:1200px){.container{max-width:1200px}}
+.screen{display:none;animation:fadeUp .4s ease}
+.screen.active{display:block}
+
+/* LOGIN narrow */
+.login-wrap{max-width:400px;margin:60px auto 0}
+.logo{text-align:center;margin-bottom:36px}
+.logo .icon{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--a2),var(--accent));margin-bottom:12px;font-size:22px}
+.logo h1{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.logo p{color:var(--dim);font-size:13px;margin-top:4px}
+
+.card{background:var(--surface);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
+.input-group input{width:100%;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:15px;outline:none;transition:all .3s}
+.input-group input:focus{border-color:var(--accent);box-shadow:0 0 20px var(--a-glow);background:rgba(255,255,255,.06)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-primary{background:linear-gradient(135deg,var(--a2),var(--accent));color:#fff;width:100%}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(0,230,255,.15)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--surface-h)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-icon{background:transparent;border:1px solid var(--border);color:var(--dim);padding:4px 8px;border-radius:var(--rs);font-size:12px;cursor:pointer}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+.error-msg{color:#ef4444;font-size:13px;text-align:center;min-height:20px;margin-top:10px;transition:opacity .3s}
+.error-msg:empty{opacity:0}
+
+/* Header */
+.dash-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px}
+.dash-header .greeting{font-size:14px;color:var(--dim)}
+.dash-header .greeting strong{color:var(--text);font-weight:600}
+.dash-header .logout-btn{background:none;border:1px solid var(--border);color:var(--dim);padding:6px 12px;border-radius:var(--rs);font-size:12px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.dash-header .logout-btn:hover{color:#ef4444;border-color:rgba(239,68,68,.3)}
+
+/* Stat cards grid */
+.stats-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+@media(min-width:600px){.stats-row{grid-template-columns:repeat(4,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;text-align:center}
+.stat-card .num{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace}
+@media(min-width:768px){.stat-card .num{font-size:26px}}
+.stat-card .num.accent{color:var(--accent)}
+.stat-card .num.ok{color:var(--ok)}
+.stat-card .num.neutral{color:var(--text)}
+.stat-card .label{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);margin-top:3px}
+
+/* Tables */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:16px}
+.table-wrap table{width:100%;border-collapse:collapse;font-size:13px;min-width:500px}
+.table-wrap th{text-align:left;padding:8px 10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);font-size:10px;white-space:nowrap}
+.table-wrap td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.table-wrap tr:last-child td{border-bottom:none}
+.table-wrap .mono{font-family:'JetBrains Mono',monospace;font-weight:500;font-size:12px}
+.table-wrap .cost{color:var(--ok)}
+.table-wrap .loss{color:#ef4444}
+.table-wrap input[type=number]{width:80px;padding:4px 6px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-family:'JetBrains Mono',monospace;outline:none;transition:all .2s}
+.table-wrap input[type=number]:focus{border-color:var(--accent)}
+.table-wrap .actions{display:flex;gap:4px;align-items:center}
+.section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin:20px 0 10px}
+.section-title:first-of-type{margin-top:0}
+
+/* Upload zone */
+.upload-zone{background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--r);padding:20px;text-align:center;cursor:pointer;transition:all .3s}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:var(--a-glow)}
+.upload-zone .icon{font-size:28px;margin-bottom:6px;opacity:.6}
+.upload-zone .text{color:var(--dim);font-size:13px}
+.upload-zone .text strong{color:var(--accent)}
+.upload-zone input[type=file]{display:none}
+.upload-zone .file-name{margin-top:6px;font-size:12px;color:var(--accent);font-weight:500}
+.context-input{width:100%;padding:10px 14px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-size:13px;outline:none;resize:none;min-height:48px;transition:all .3s;margin-top:10px;font-family:'Inter',sans-serif}
+.context-input:focus{border-color:var(--accent);box-shadow:0 0 15px var(--a-glow)}
+.upload-actions{display:flex;gap:6px;margin-top:10px}
+.upload-actions .btn{flex:1}
+
+/* File list */
+.file-list{list-style:none}
+.file-list li{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:4px;font-size:12px}
+.file-list .dot{width:5px;height:5px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.file-list .dot.accent{background:var(--accent)}
+.file-list .dot.ok{background:var(--ok)}
+.file-list .badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;text-transform:uppercase}
+.file-list .badge.pending{color:var(--accent);background:rgba(0,230,255,.08)}
+.file-list .badge.done{color:var(--ok);background:rgba(34,197,94,.08)}
+.empty-msg{color:var(--dim);font-size:12px;text-align:center;padding:16px;border:1px dashed var(--border);border-radius:var(--rs)}
+
+/* Details row */
+.details-row{padding:0!important}
+.details-wrap{padding:4px 12px 8px 24px;font-size:12px}
+.details-wrap summary{color:var(--dim);cursor:pointer;font-size:11px}
+.details-row .hw-item{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);color:var(--dim);font-size:11px;flex-wrap:wrap;gap:2px}
+
+/* Spinner */
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:rgba(0,0,0,.88);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--rs);padding:10px 18px;font-size:13px;z-index:100;transition:transform .4s cubic-bezier(.16,1,.3,1);max-width:90%;text-align:center;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{border-color:rgba(34,197,94,.3)}
+.toast.error{border-color:rgba(239,68,68,.3)}
+
+/* Editable inline */
+.editable{padding:4px 6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:13px;font-family:'JetBrains Mono',monospace;width:70px;outline:none;transition:all .2s;display:inline-block}
+.editable:focus{border-color:var(--accent)}
+.editable.wide{width:100%}
+.fx-badge{font-size:10px;color:var(--dim);margin-left:4px}
+
+@media(max-width:599px){
+ .table-wrap table{font-size:12px;min-width:400px}
+ .table-wrap th,.table-wrap td{padding:6px 8px}
+ .stats-row{grid-template-columns:repeat(2,1fr)}
+ .stats-row .stat-card .num{font-size:18px}
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-  <div class="grid"></div>
+<div class="grid"></div>
+<div id="toast" class="toast"></div>
 
-  <div id="toast" class="toast"></div>
+<div class="container">
 
-  <div class="container">
+<!-- LOGIN -->
+<div id="login-screen" class="screen active">
+<div class="login-wrap">
+<div class="logo"><div class="icon">⚡</div><h1>Autonet</h1><p>Console</p></div>
+<div class="card">
+<div class="input-group"><label>Code d'accès</label><input type="text" id="access-code" placeholder="Entrez votre code" maxlength="10" autofocus></div>
+<button class="btn btn-primary" id="login-btn">Accéder à la Console</button>
+<div class="error-msg" id="login-error"></div>
+</div></div></div>
 
-    <!-- LOGIN -->
-    <div id="login-screen">
-      <div class="logo">
-        <div class="icon">⚡</div>
-        <h1>Autonet</h1>
-        <p>Console</p>
-      </div>
-      <div class="card">
-        <div class="input-group">
-          <label>Access code</label>
-          <input type="text" id="access-code" placeholder="Enter your code" maxlength="10" autofocus>
-        </div>
-        <button class="btn btn-primary" id="login-btn">Access Console</button>
-        <div class="error-msg" id="login-error"></div>
-      </div>
-    </div>
+<!-- ADMIN -->
+<div id="admin-screen" class="screen">
+<div class="dash-header">
+<div class="greeting">🔐 Console <strong>Admin</strong> &middot; <span id="fx-display" style="font-size:12px;color:var(--dim)"></span></div>
+<button class="logout-btn" id="admin-logout-btn">Quitter</button>
+</div>
 
-    <!-- ADMIN DASHBOARD (hidden by default) -->
-    <div id="admin-screen" style="display:none;">
-      <div class="dash-header">
-        <div class="greeting">🔐 <strong>Admin</strong> — Console Autonet</div>
-        <button class="logout-btn" id="admin-logout-btn">Quitter</button>
-      </div>
+<!-- KPIs -->
+<div class="stats-row" id="admin-kpis"></div>
 
-      <!-- Financial summary -->
-      <div id="billing-summary"></div>
+<!-- FIXED COSTS -->
+<div class="section-title">🏗️ Frais fixes</div>
+<div class="card" style="margin-bottom:16px;">
+<div class="table-wrap">
+<table>
+<tr><th>Type</th><th>Détail</th><th>Montant</th><th>Par mois</th><th>Par mois (CHF)</th><th></th></tr>
+<tr>
+<td>🖥️ VPS</td><td>Hostinger K-H-M1</td>
+<td><input type="number" class="editable" id="vps-cost" step="0.01" min="0"> <span style="font-size:12px;color:var(--dim)">$/mois</span></td>
+<td class="mono" id="vps-monthly">—</td>
+<td class="mono" id="vps-chf">—</td>
+<td><button class="btn-icon" onclick="saveCosts()">💾</button></td>
+</tr>
+<tr>
+<td>🌐 Domaine</td><td>autonet.live (Namecheap)</td>
+<td><input type="number" class="editable" id="domain-cost" step="0.01" min="0"> <span style="font-size:12px;color:var(--dim)">$/an</span></td>
+<td class="mono" id="domain-monthly">—</td>
+<td class="mono" id="domain-chf">—</td>
+<td><button class="btn-icon" onclick="saveCosts()">💾</button></td>
+</tr>
+<tr style="border-top:2px solid var(--accent)">
+<td><strong>Total fixe</strong></td><td></td><td></td>
+<td class="mono" id="fixed-total-usd"><strong>—</strong></td>
+<td class="mono" id="fixed-total-chf"><strong>—</strong></td>
+<td></td>
+</tr>
+</table></div></div>
 
-      <!-- Per-user breakdown -->
-      <div class="section-title">👥 Clients</div>
-      <div id="billing-clients"></div>
+<!-- YEARLY PROJECTION -->
+<div class="stats-row" id="admin-projection"></div>
 
-      <!-- Plans config -->
-      <div class="section-title">📋 Plans</div>
-      <div id="billing-plans"></div>
-    </div>
+<!-- CLIENTS -->
+<div class="section-title">👥 Clients</div>
+<div class="table-wrap" id="admin-clients"></div>
 
-    <!-- DASHBOARD -->
-    <div id="dash-screen">
-      <div class="dash-header">
-        <div class="greeting"><strong id="customer-name">—</strong>'s console</div>
-        <button class="logout-btn" id="logout-btn">Quitter</button>
-      </div>
+<!-- PLANS -->
+<div class="section-title">📋 Plans</div>
+<div class="table-wrap" id="admin-plans"></div>
+</div>
 
-      <div class="stats-row">
-        <div class="stat-card">
-          <div class="num pending" id="pending-count">0</div>
-          <div class="label">Pending</div>
-        </div>
-        <div class="stat-card">
-          <div class="num done" id="done-count">0</div>
-          <div class="label">Completed</div>
-        </div>
-      </div>
+<!-- USER DASHBOARD -->
+<div id="dash-screen" class="screen">
+<div class="dash-header">
+<div class="greeting">Console de <strong id="customer-name">—</strong></div>
+<button class="logout-btn" id="logout-btn">Quitter</button>
+</div>
 
-      <div class="card">
-        <div class="upload-zone" id="drop-zone">
-          <div class="icon">📄</div>
-          <div class="text">Déposez un fichier <strong>(PDF, images, DOCX, PPTX)</strong></div>
-          <div class="file-name" id="file-name"></div>
-          <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.ppt,.pptx">
-        </div>
+<div class="stats-row">
+<div class="stat-card"><div class="num accent" id="pending-count">0</div><div class="label">En attente</div></div>
+<div class="stat-card"><div class="num ok" id="done-count">0</div><div class="label">Terminé</div></div>
+</div>
 
-        <textarea class="context-input" id="context-text" placeholder="Contexte optionnel — ex. &quot;Devoir de mardi, exercice 3&quot;"></textarea>
+<div class="card">
+<div class="upload-zone" id="drop-zone">
+<div class="icon">📄</div>
+<div class="text">Déposez un fichier <strong>(PDF, images, DOCX, PPTX)</strong></div>
+<div class="file-name" id="file-name"></div>
+<input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.ppt,.pptx">
+</div>
+<textarea class="context-input" id="context-text" placeholder="Contexte optionnel — ex. &quot;Devoir de mardi, exercice 3&quot;"></textarea>
+<div class="upload-actions">
+<button class="btn btn-primary" id="upload-btn"><span id="upload-text">Téléverser</span></button>
+<button class="btn btn-primary" id="text-btn"><span id="text-btn-text">Texte seul</span></button>
+</div></div>
 
-        <div class="upload-btn-wrap" style="display:flex;gap:8px;">
-          <button class="btn btn-primary" id="upload-btn" style="flex:1;">
-            <span id="upload-text">Téléverser un fichier</span>
-          </button>
-          <button class="btn btn-primary" id="text-btn" style="flex:1;">
-            <span id="text-btn-text">Texte seul</span>
-          </button>
-        </div>
-      </div>
+<div class="section-title">En attente</div>
+<ul class="file-list" id="pending-list"><li class="empty-msg">Aucun fichier en attente</li></ul>
+<div class="section-title">Terminé</div>
+<ul class="file-list" id="done-list"><li class="empty-msg">Aucun fichier terminé</li></ul>
+</div>
+</div>
 
-      <div class="section-title">En attente</div>
-      <ul class="file-list" id="pending-list">
-        <li class="empty-msg">Aucun fichier en attente</li>
-      </ul>
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('autonet_token');
+let customer = localStorage.getItem('autonet_customer');
+let fxRate = 0.88;
 
-      <div class="section-title">Terminé</div>
-      <ul class="file-list" id="done-list">
-        <li class="empty-msg">Aucun fichier terminé</li>
-      </ul>
-    </div>
+// Auto-login
+if (token && customer) { showDash(); refreshStatus(); if (customer === 'admin') getAdminBilling(); }
 
-  </div>
+// ── Login ──
+document.getElementById('login-btn').addEventListener('click', login);
+document.getElementById('access-code').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+async function login() {
+  const code = document.getElementById('access-code').value.trim();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  if (!code) { err.textContent = 'Entrez un code d\'accès'; return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Connexion…'; err.textContent = '';
+  try {
+    const res = await fetch(API + '/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({accessCode:code}) });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Code invalide');
+    token = d.token; customer = d.customer;
+    localStorage.setItem('autonet_token', token); localStorage.setItem('autonet_customer', customer);
+    showDash(); if (customer === 'admin') getAdminBilling(); else refreshStatus();
+  } catch(e) { err.textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Accéder à la Console'; }
+}
 
-  <script>
-    const API = window.location.origin; // same origin, or set explicitly
-    let token = localStorage.getItem('autonet_token');
-    let customer = localStorage.getItem('autonet_customer');
+function logout() {
+  localStorage.removeItem('autonet_token'); localStorage.removeItem('autonet_customer');
+  token = null; customer = null;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('access-code').value = ''; document.getElementById('access-code').focus();
+}
+document.getElementById('logout-btn').addEventListener('click', logout);
+document.getElementById('admin-logout-btn').addEventListener('click', logout);
 
-    // Auto-login if token exists
-    if (token && customer) {
-      showDash();
-      refreshStatus();
-    }
+function showDash() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  if (customer === 'admin') document.getElementById('admin-screen').classList.add('active');
+  else { document.getElementById('dash-screen').classList.add('active');
+    document.getElementById('customer-name').textContent = customer; }
+}
 
-    // ── Login ──
-    document.getElementById('login-btn').addEventListener('click', login);
-    document.getElementById('access-code').addEventListener('keydown', e => {
-      if (e.key === 'Enter') login();
+// ── Admin Billing ──
+async function getAdminBilling() {
+  try {
+    const [billRes, fxRes] = await Promise.all([
+      fetch(API + '/api/admin/billing', { headers:{Authorization:'Bearer '+token} }).then(r => r.json()),
+      fetch(API + '/api/admin/fx-rate', { headers:{Authorization:'Bearer '+token} }).then(r => r.json())
+    ]);
+    fxRate = fxRes.rate || 0.88;
+    const fxDate = fxRes.date || '—';
+    document.getElementById('fx-display').textContent = `USD/CHF: ${fxRate} (${fxDate})`;
+
+    const d = billRes;
+    // Populate editable fields
+    document.getElementById('vps-cost').value = d.fixedCosts.vps.monthly;
+    document.getElementById('domain-cost').value = d.fixedCosts.domain.yearly;
+
+    // KPI row
+    const kpi = document.getElementById('admin-kpis');
+    const api = d.apiTotals.totalCost;
+    const rev = d.revenue.totalMonthly;
+    const profit = d.profit.monthlyNet;
+    kpi.innerHTML =
+      `<div class="stat-card"><div class="num accent">$${d.fixedCosts.totalMonthly.toFixed(2)}</div><div class="label">Frais fixes / mois</div></div>` +
+      `<div class="stat-card"><div class="num accent">$${api.toFixed(4)}</div><div class="label">API / mois</div></div>` +
+      `<div class="stat-card"><div class="num ok">$${rev.toFixed(2)}</div><div class="label">Revenu / mois</div></div>` +
+      `<div class="stat-card"><div class="num ${profit >= 0 ? 'ok' : 'loss'}">${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}</div><div class="label">Bénéfice / mois (${d.profit.marginPercent}%)</div></div>`;
+
+    updateFixedCosts();
+
+    // Projection
+    const proj = document.getElementById('admin-projection');
+    proj.innerHTML =
+      `<div class="stat-card"><div class="num neutral">$${rev.toFixed(2)}</div><div class="label">Revenu / mois</div></div>` +
+      `<div class="stat-card"><div class="num neutral">$${(rev * 12).toFixed(2)}</div><div class="label">Revenu / an</div></div>` +
+      `<div class="stat-card"><div class="num ${profit >= 0 ? 'ok' : 'loss'}">${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}</div><div class="label">Bénéfice / mois</div></div>` +
+      `<div class="stat-card"><div class="num ${d.profit.yearlyNet >= 0 ? 'ok' : 'loss'}">${d.profit.yearlyNet >= 0 ? '+' : ''}$${d.profit.yearlyNet.toFixed(2)}</div><div class="label">Bénéfice / an</div></div>`;
+
+    // Clients
+    let ch = '<table><tr><th>Client</th><th>Code</th><th>Plan</th><th>Prix</th><th>API coût</th><th>Devoirs</th><th>Bénéfice</th></tr>';
+    d.customers.forEach(c => {
+      const pc = c.grossProfit >= 0 ? 'ok' : 'loss';
+      ch += `<tr><td><strong>${c.name}</strong></td><td class="mono">${c.code}</td><td>${c.planName}</td><td class="mono">$${c.planPrice.toFixed(2)}</td><td class="mono cost">$${c.apiCost.toFixed(4)}</td><td class="mono">${c.homeworksDone}/${c.homeworkLimit === -1 ? '∞' : c.homeworkLimit}</td><td class="mono ${pc}">${c.grossProfit >= 0 ? '+' : ''}$${c.grossProfit.toFixed(4)}</td></tr>`;
+      if (c.homeworks.length) {
+        ch += `<tr class="details-row"><td colspan="7"><div class="details-wrap"><details><summary>Détails des devoirs</summary>`;
+        c.homeworks.slice().reverse().forEach(h => {
+          const m = h.model ? h.model.split('/').pop() : '—';
+          ch += `<div class="hw-item"><span>${h.date} — ${h.name}</span><span class="mono">${m} · ${h.promptTokens}p+${h.completionTokens}c=${h.totalTokens}t → <span class="cost">$${h.cost.toFixed(6)}</span></span></div>`;
+        });
+        ch += `</details></div></td></tr>`;
+      }
     });
+    ch += '</table>';
+    document.getElementById('admin-clients').innerHTML = '<div class="card"><div class="table-wrap">' + ch + '</div></div>';
 
-    async function login() {
-      const code = document.getElementById('access-code').value.trim();
-      const btn = document.getElementById('login-btn');
-      const err = document.getElementById('login-error');
-      if (!code) { err.textContent = 'Entrez un code d\'accès'; return; }
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Connexion…';
-      err.textContent = '';
-
-      try {
-        const res = await fetch(API + '/api/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessCode: code })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Code invalide');
-
-        token = data.token;
-        customer = data.customer;
-        localStorage.setItem('autonet_token', token);
-        localStorage.setItem('autonet_customer', customer);
-
-        showDash();
-        refreshStatus();
-      } catch (e) {
-        err.textContent = e.message;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Accéder à la Console';
-      }
-    }
-
-    // ── Logout ──
-    function logout() {
-      localStorage.removeItem('autonet_token');
-      localStorage.removeItem('autonet_customer');
-      token = null; customer = null;
-      document.getElementById('dash-screen').style.display = 'none';
-      document.getElementById('admin-screen').style.display = 'none';
-      document.getElementById('login-screen').style.display = 'block';
-      document.getElementById('access-code').value = '';
-      document.getElementById('access-code').focus();
-    }
-
-    document.getElementById('logout-btn').addEventListener('click', logout);
-
-    // ── Upload ──
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    let selectedFile = null;
-
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    // Plans
+    let ph = '<table><tr><th>Plan</th><th>Description</th><th>Prix/mois</th><th>Limite</th><th>Clients</th></tr>';
+    Object.keys(d.availablePlans).forEach(k => {
+      const p = d.availablePlans[k];
+      const cnt = d.customers.filter(c => c.plan === k).length;
+      ph += `<tr><td><strong>${p.name}</strong></td><td>${p.description || ''}</td><td class="mono">$${p.monthlyPrice.toFixed(2)}</td><td class="mono">${p.homeworkLimit === -1 ? 'Illimité' : p.homeworkLimit + '/mois'}</td><td class="mono">${cnt}</td></tr>`;
     });
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) handleFile(fileInput.files[0]);
+    ph += '</table>';
+    document.getElementById('admin-plans').innerHTML = '<div class="card"><div class="table-wrap">' + ph + '</div></div>';
+
+  } catch(e) { console.error(e); }
+}
+
+function updateFixedCosts() {
+  const vps = Number(document.getElementById('vps-cost').value) || 0;
+  const domain = Number(document.getElementById('domain-cost').value) || 0;
+  const domM = domain / 12;
+  const total = vps + domM;
+  document.getElementById('vps-monthly').textContent = '$' + vps.toFixed(2);
+  document.getElementById('domain-monthly').textContent = '$' + domM.toFixed(2);
+  document.getElementById('fixed-total-usd').textContent = '$' + total.toFixed(2);
+  document.getElementById('vps-chf').textContent = 'CHF ' + (vps * fxRate).toFixed(2);
+  document.getElementById('domain-chf').textContent = 'CHF ' + (domM * fxRate).toFixed(2);
+  document.getElementById('fixed-total-chf').textContent = 'CHF ' + (total * fxRate).toFixed(2);
+}
+document.getElementById('vps-cost').addEventListener('input', updateFixedCosts);
+document.getElementById('domain-cost').addEventListener('input', updateFixedCosts);
+
+async function saveCosts() {
+  const vps = Number(document.getElementById('vps-cost').value) || 0;
+  const domain = Number(document.getElementById('domain-cost').value) || 0;
+  try {
+    await fetch(API + '/api/admin/config', {
+      method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({ fixedCosts: { vps: { monthlyCost: vps }, domain: { yearlyCost: domain } } })
     });
+    showToast('✅ Coûts sauvegardés', 'success');
+  } catch(e) { showToast('Erreur', 'error'); }
+}
 
-    function handleFile(file) {
-      const allowedTypes = ['application/pdf','image/jpeg','image/png','image/gif','image/webp',
-        'application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'];
-      if (!allowedTypes.includes(file.type)) {
-        showToast('Type de fichier non supporté (PDF, images, DOCX, PPTX)', 'error');
-        return;
-      }
-      selectedFile = file;
-      document.getElementById('file-name').textContent = '📎 ' + file.name;
-      document.getElementById('upload-text').textContent = 'Téléverser ' + file.name;
-    }
+// ── Upload ──
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+let selectedFile = null;
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
 
-    document.getElementById('upload-btn').addEventListener('click', upload);
-    document.getElementById('text-btn').addEventListener('click', submitText);
+function handleFile(file) {
+  const allowed = ['application/pdf','image/jpeg','image/png','image/gif','image/webp','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+  if (!allowed.includes(file.type)) { showToast('Type non supporté', 'error'); return; }
+  selectedFile = file;
+  document.getElementById('file-name').textContent = '📎 ' + file.name;
+  document.getElementById('upload-text').textContent = 'Téléverser ' + file.name;
+}
 
-    async function submitText() {
-      const context = document.getElementById('context-text').value.trim();
-      if (!context) { showToast('Entrez d\'abord un contexte', 'error'); return; }
-      const btn = document.getElementById('text-btn');
-      const txt = document.getElementById('text-btn-text');
-      btn.disabled = true;
-      txt.innerHTML = '<span class="spinner"></span>Envoi en cours…';
+document.getElementById('upload-btn').addEventListener('click', upload);
+document.getElementById('text-btn').addEventListener('click', submitText);
 
-      try {
-        const res = await fetch(API + '/api/submit', {
-          method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ context })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Échec de l\'envoi');
+async function submitText() {
+  const ctx = document.getElementById('context-text').value.trim();
+  if (!ctx) { showToast('Entrez d\'abord un contexte', 'error'); return; }
+  const btn = document.getElementById('text-btn'); const txt = document.getElementById('text-btn-text');
+  btn.disabled = true; txt.innerHTML = '<span class="spinner"></span>Envoi…';
+  try {
+    const res = await fetch(API + '/api/submit', { method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify({context:ctx}) });
+    const d = await res.json(); if (!res.ok) throw new Error(d.error || 'Échec');
+    showToast(d.message || '✅ Envoyé', 'success');
+    document.getElementById('context-text').value = ''; refreshStatus();
+  } catch(e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; txt.textContent = 'Texte seul'; }
+}
 
-        showToast(data.message || '✅ Texte envoyé', 'success');
-        document.getElementById('context-text').value = '';
-        refreshStatus();
-      } catch (e) {
-        showToast(e.message, 'error');
-      } finally {
-        btn.disabled = false;
-        txt.textContent = 'Submit Text Only';
-      }
-    }
+async function upload() {
+  if (!selectedFile) { showToast('Sélectionnez d\'abord un fichier', 'error'); return; }
+  const btn = document.getElementById('upload-btn'); const txt = document.getElementById('upload-text');
+  btn.disabled = true; txt.innerHTML = '<span class="spinner"></span>Téléversement…';
+  try {
+    const form = new FormData(); form.append('file', selectedFile); form.append('context', document.getElementById('context-text').value);
+    const res = await fetch(API + '/api/upload', { method:'POST', headers:{'Authorization':'Bearer '+token}, body:form });
+    const d = await res.json(); if (!res.ok) throw new Error(d.error || 'Échec');
+    showToast(d.message || '✅ Téléversé', 'success');
+    selectedFile = null; document.getElementById('file-name').textContent = ''; document.getElementById('context-text').value = ''; fileInput.value = ''; refreshStatus();
+  } catch(e) { showToast(e.message, 'error'); }
+  finally { btn.disabled = false; txt.textContent = 'Téléverser'; }
+}
 
-    async function upload() {
-      if (!selectedFile) { showToast('Sélectionnez d\'abord un fichier', 'error'); return; }
-      const btn = document.getElementById('upload-btn');
-      const txt = document.getElementById('upload-text');
-      btn.disabled = true;
-      txt.innerHTML = '<span class="spinner"></span>Téléversement…';
+// ── Status ──
+async function refreshStatus() {
+  if (!token || customer === 'admin') return;
+  try {
+    const res = await fetch(API + '/api/status', { headers:{'Authorization':'Bearer '+token} });
+    const d = await res.json(); if (!res.ok) return;
+    document.getElementById('pending-count').textContent = d.pending.length;
+    document.getElementById('done-count').textContent = d.completed.length;
+    const pl = document.getElementById('pending-list');
+    const dl = document.getElementById('done-list');
+    pl.innerHTML = d.pending.length ? d.pending.map(f => `<li><span><span class="dot accent"></span>${f}</span><span class="badge pending">En attente</span></li>`).join('') : '<li class="empty-msg">Aucun fichier en attente</li>';
+    dl.innerHTML = d.completed.length ? d.completed.map(f => `<li><span><span class="dot ok"></span>${f}</span><span class="badge done">Terminé</span></li>`).join('') : '<li class="empty-msg">Aucun fichier terminé</li>';
+  } catch {}
+}
 
-      try {
-        const form = new FormData();
-        form.append('file', selectedFile);
-        form.append('context', document.getElementById('context-text').value);
+// ── Toast ──
+let toastTimer;
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + (type||'') + ' show';
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
 
-        const res = await fetch(API + '/api/upload', {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + token },
-          body: form
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Upload failed');
-
-        showToast(data.message || '✅ Téléversé avec succès', 'success');
-        selectedFile = null;
-        document.getElementById('file-name').textContent = '';
-        document.getElementById('context-text').value = '';
-        fileInput.value = '';
-        refreshStatus();
-      } catch (e) {
-        showToast(e.message, 'error');
-      } finally {
-        btn.disabled = false;
-        txt.textContent = 'Upload';
-      }
-    }
-
-    // ── Status ──
-    async function refreshStatus() {
-      if (!token) return;
-      try {
-        const res = await fetch(API + '/api/status', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error('Status failed');
-
-        document.getElementById('pending-count').textContent = data.pending.length;
-        document.getElementById('done-count').textContent = data.completed.length;
-
-        const pendingList = document.getElementById('pending-list');
-        const doneList = document.getElementById('done-list');
-
-        pendingList.innerHTML = data.pending.length
-          ? data.pending.map(f => `<li><span class="name"><span class="dot pending"></span>${f}</span><span class="status-badge pending-badge">En attente</span></li>`).join('')
-          : '<li class="empty-msg">Aucun fichier en attente</li>';
-
-        doneList.innerHTML = data.completed.length
-          ? data.completed.map(f => `<li><span class="name"><span class="dot done"></span>${f}</span><span class="status-badge done-badge">Terminé</span></li>`).join('')
-          : '<li class="empty-msg">Aucun fichier terminé</li>';
-      } catch {}
-    }
-
-    // ── UI helpers ──
-    function showDash() {
-      document.getElementById('login-screen').style.display = 'none';
-      if (customer === 'admin') {
-        document.getElementById('admin-screen').style.display = 'block';
-        getAdminStats();
-      } else {
-        document.getElementById('dash-screen').style.display = 'block';
-        document.getElementById('customer-name').textContent = customer;
-      }
-    }
-
-    // ── Admin logout ──
-    document.getElementById('admin-logout-btn').addEventListener('click', logout);
-
-    async function getAdminStats() {
-      try {
-        const res = await fetch(API + '/api/admin/billing', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        const data = await res.json();
-        if (!res.ok) return;
-
-        const sumDiv = document.getElementById('billing-summary');
-        let html = '';
-
-        // === TOP METRICS ROW ===
-        html += '<div class="stats-row" style="grid-template-columns:1fr 1fr 1fr 1fr;">' +
-          '<div class="stat-card"><div class="num pending">' + data.fixedCosts.totalMonthly.toFixed(2) + '$</div><div class="label">Frais fixes/mois</div></div>' +
-          '<div class="stat-card"><div class="num done">' + data.apiTotals.totalCost.toFixed(4) + '$</div><div class="label">API/mois</div></div>' +
-          '<div class="stat-card"><div class="num pending">' + data.revenue.totalMonthly.toFixed(2) + '$</div><div class="label">Revenu/mois</div></div>' +
-          '<div class="stat-card"><div class="num ' + (data.profit.monthlyNet >= 0 ? 'done' : '') + '">' + data.profit.monthlyNet.toFixed(2) + '$</div><div class="label">Bénéfice/mois (' + data.profit.marginPercent + '%)</div></div>' +
-          '</div>';
-
-        // === FIXED COSTS BREAKDOWN ===
-        html += '<div class="card" style="margin-bottom:16px;"><table class="admin-table">' +
-          '<tr><th>Type</th><th>Détail</th><th>Montant</th><th>Par mois</th></tr>' +
-          '<tr><td>🖥️ VPS</td><td>' + data.fixedCosts.vps.name + '</td><td class="num">' + data.fixedCosts.vps.monthly.toFixed(2) + '$</td><td class="num">' + data.fixedCosts.vps.monthly.toFixed(2) + '$</td></tr>' +
-          '<tr><td>🌐 Domaine</td><td>' + data.fixedCosts.domain.name + '</td><td class="num">' + data.fixedCosts.domain.yearly.toFixed(2) + '$/an</td><td class="num">' + data.fixedCosts.domain.monthly.toFixed(2) + '$</td></tr>' +
-          '<tr style="border-top:2px solid var(--accent)"><td><strong>Total fixe</strong></td><td></td><td></td><td class="num"><strong>' + data.fixedCosts.totalMonthly.toFixed(2) + '$</strong></td></tr>' +
-          '</table></div>';
-
-        // === YEARLY PROJECTION ===
-        html += '<div class="card" style="margin-bottom:16px;"><table class="admin-table">' +
-          '<tr><th>Métrique</th><th>Mensuel</th><th>Annuel</th></tr>' +
-          '<tr><td>Revenu</td><td class="num">' + data.revenue.totalMonthly.toFixed(2) + '$</td><td class="num">' + data.revenue.totalYearly.toFixed(2) + '$</td></tr>' +
-          '<tr><td>Bénéfice net</td><td class="num">' + data.profit.monthlyNet.toFixed(2) + '$</td><td class="num">' + data.profit.yearlyNet.toFixed(2) + '$</td></tr>' +
-          '<tr><td>Marge</td><td class="num cost">' + (data.profit.marginPercent >= 0 ? '+' : '') + data.profit.marginPercent + '%</td><td></td></tr>' +
-          '</table></div>';
-
-        sumDiv.innerHTML = html;
-
-        // === CLIENTS TABLE ===
-        const clientsDiv = document.getElementById('billing-clients');
-        let clientHtml = '<div class="admin-card"><table class="admin-table">' +
-          '<tr><th>Client</th><th>Code</th><th>Forfait</th><th>Prix</th><th>API coût</th><th>Devoirs</th><th>Bénéfice</th></tr>';
-
-        data.customers.forEach(c => {
-          const profitColor = c.grossProfit >= 0 ? 'var(--success)' : '#ef4444';
-          clientHtml += '<tr>' +
-            '<td><strong>' + c.name + '</strong></td>' +
-            '<td class="num">' + c.code + '</td>' +
-            '<td>' + (c.planName || c.plan) + '</td>' +
-            '<td class="num">' + c.planPrice.toFixed(2) + '$</td>' +
-            '<td class="num">' + c.apiCost.toFixed(4) + '$</td>' +
-            '<td class="num">' + c.homeworksDone + '/' + (c.homeworkLimit === -1 ? '∞' : c.homeworkLimit) + '</td>' +
-            '<td class="num" style="color:' + profitColor + ';">' + (c.grossProfit >= 0 ? '+' : '') + c.grossProfit.toFixed(4) + '$</td>' +
-            '</tr>';
-
-          // Per-homework details
-          if (c.homeworks.length) {
-            clientHtml += '<tr><td colspan="7" style="padding:0;"><details style="padding:4px 12px 8px 24px;"><summary style="font-size:12px;color:var(--text-dim);cursor:pointer;">Détails des devoirs</summary>';
-            c.homeworks.slice().reverse().forEach(h => {
-              const modelShort = h.model ? h.model.split('/').pop() : '—';
-              clientHtml += '<div style="font-size:12px;color:var(--text-dim);padding:3px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">' +
-                '<span>' + h.date + ' — ' + h.name + '</span>' +
-                '<span style="font-family:\'JetBrains Mono\',monospace;">' + modelShort + ' · ' + h.promptTokens + 'p+' + h.completionTokens + 'c=' + h.totalTokens + 't → <span style="color:var(--success);">$' + h.cost.toFixed(6) + '</span></span>' +
-                '</div>';
-            });
-            clientHtml += '</details></td></tr>';
-          }
-        });
-
-        clientHtml += '</table></div>';
-        clientsDiv.innerHTML = clientHtml;
-
-        // === PLANS ===
-        const plansDiv = document.getElementById('billing-plans');
-        let plansHtml = '<div class="admin-card"><table class="admin-table">' +
-          '<tr><th>Plan</th><th>Description</th><th>Prix/mois</th><th>Limite</th></tr>';
-        Object.keys(data.availablePlans).forEach(key => {
-          const p = data.availablePlans[key];
-          const count = data.customers.filter(c => c.plan === key).length;
-          plansHtml += '<tr>' +
-            '<td><strong>' + p.name + '</strong> <span style="color:var(--text-dim);font-size:11px;">(' + count + ' client' + (count > 1 ? 's' : '') + ')</span></td>' +
-            '<td>' + (p.description || '') + '</td>' +
-            '<td class="num">' + p.monthlyPrice.toFixed(2) + '$</td>' +
-            '<td class="num">' + (p.homeworkLimit === -1 ? 'Illimité' : p.homeworkLimit + '/mois') + '</td>' +
-            '</tr>';
-        });
-        plansHtml += '</table></div>';
-        plansDiv.innerHTML = plansHtml;
-
-      } catch (e) { console.error(e); }
-    }
-
-    let toastTimer;
-    function showToast(msg, type) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'toast ' + (type || '') + ' show';
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
-    }
-
-    // Auto-refresh status every 30s
-    setInterval(refreshStatus, 30000);
-    setInterval(() => { if (customer === 'admin') getAdminStats(); }, 60000);
-  </script>
+// ── Auto-refresh ──
+setInterval(refreshStatus, 30000);
+setInterval(() => { if (customer === 'admin') getAdminBilling(); }, 120000);
+</script>
 </body>
 </html>

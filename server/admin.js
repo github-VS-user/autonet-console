@@ -197,4 +197,57 @@ router.get('/billing', requireAuth, requireAdmin, (req, res) => {
   });
 });
 
+// GET /api/admin/fx-rate — get current USD/CHF rate (cached 7 days)
+router.get('/fx-rate', requireAuth, requireAdmin, async (req, res) => {
+  const fxPath = path.join(DATA_DIR, 'fx-cache.json');
+  let cache = {};
+  try {
+    if (fs.existsSync(fxPath)) cache = JSON.parse(fs.readFileSync(fxPath, 'utf-8'));
+  } catch {}
+
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  // Return cached if still valid
+  if (cache.rate && cache.fetched && (now - cache.fetched < weekMs)) {
+    return res.json({ rate: cache.rate, date: cache.date, cached: true });
+  }
+
+  // Fetch fresh rate
+  try {
+    const resp = await fetch('https://open.er-api.com/v6/latest/USD');
+    const data = await resp.json();
+    const rate = data.rates?.CHF;
+    if (rate) {
+      cache = { rate, date: data.date || new Date().toISOString().split('T')[0], fetched: now };
+      fs.writeFileSync(fxPath, JSON.stringify(cache, null, 2));
+      return res.json({ rate, date: cache.date, cached: false });
+    }
+  } catch {}
+
+  // Fallback: use old cache or default
+  res.json({ rate: cache.rate || 0.88, date: cache.date || '—', cached: true });
+});
+
+// PUT /api/admin/config — update admin config (fixed costs, plans, customer plans)
+router.put('/config', requireAuth, requireAdmin, (req, res) => {
+  const configPath = path.join(DATA_DIR, 'admin-config.json');
+  const { fixedCosts, plans, customers } = req.body;
+
+  let config = {};
+  try {
+    if (fs.existsSync(configPath)) config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  } catch {}
+
+  if (fixedCosts) {
+    if (fixedCosts.vps?.monthlyCost !== undefined) config.fixedCosts.vps.monthlyCost = Number(fixedCosts.vps.monthlyCost);
+    if (fixedCosts.domain?.yearlyCost !== undefined) config.fixedCosts.domain.yearlyCost = Number(fixedCosts.domain.yearlyCost);
+  }
+  if (plans) config.plans = plans;
+  if (customers) config.customers = customers;
+
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  res.json({ ok: true });
+});
+
 module.exports = { router };
