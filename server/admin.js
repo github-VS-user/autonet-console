@@ -136,6 +136,20 @@ router.get('/billing', requireAuth, requireAdmin, (req, res) => {
   const domainMonthly = domainYearly / 12;
   const totalFixedMonthly = vpsMonthly + domainMonthly;
 
+  // Try to get FX rate for CHF conversion
+  const fxPath = path.join(DATA_DIR, 'fx-cache.json');
+  let fxRate = 0.88;
+  try {
+    if (fs.existsSync(fxPath)) {
+      const fx = JSON.parse(fs.readFileSync(fxPath, 'utf-8'));
+      if (fx.rate) fxRate = fx.rate;
+    }
+  } catch {}
+  const chfToUsd = fxRate; // 1 CHF = fxRate USD (actually 1 USD = fxRate CHF, so 1 CHF = 1/fxRate USD)
+  // Wait: fxRate is USD/CHF = 0.78, meaning 1 USD = 0.78 CHF
+  // So 1 CHF = 1/0.78 = 1.28 USD
+  const usdPerChf = 1 / fxRate;
+
   // Per-customer breakdown
   const customers = [];
   let totalAPICost = 0;
@@ -143,9 +157,12 @@ router.get('/billing', requireAuth, requireAdmin, (req, res) => {
 
   Object.keys(config.customers || {}).forEach(name => {
     const cfg = config.customers[name];
-    const plan = config.plans?.[cfg.plan] || { name: '—', monthlyPrice: 0, homeworkLimit: 0 };
+    const plan = config.plans?.[cfg.plan] || { name: '—', monthlyPriceCHF: 0, homeworkLimit: 0 };
     const usage = costs[name] || { totalCost: 0, totalTokens: 0, homeworks: [] };
     const code = Object.keys(codes).find(k => codes[k] === name) || '—';
+
+    const priceCHF = plan.monthlyPriceCHF || 0;
+    const priceUSD = priceCHF * usdPerChf;
 
     totalAPICost += usage.totalCost;
     totalHomeworkCount += usage.homeworks.length;
@@ -155,25 +172,25 @@ router.get('/billing', requireAuth, requireAdmin, (req, res) => {
       code,
       plan: cfg.plan,
       planName: plan.name,
-      planPrice: plan.monthlyPrice,
+      planPriceCHF: priceCHF,
+      planPriceUSD: Math.round(priceUSD * 100) / 100,
       homeworkLimit: plan.homeworkLimit,
       apiCost: usage.totalCost,
       totalTokens: usage.totalTokens,
       homeworksDone: usage.homeworks.length,
-      // Profit per customer: plan price - API cost - shared cost share
-      grossProfit: plan.monthlyPrice - usage.totalCost,
-      homeworks: usage.homeworks.slice(-10) // last 10
+      grossProfitUSD: Math.round((priceUSD - usage.totalCost) * 100) / 100,
+      grossProfitCHF: Math.round((priceCHF - usage.totalCost * fxRate) * 100) / 100,
+      homeworks: usage.homeworks.slice(-10)
     });
   });
 
-  // Shared costs per customer
-  const customerCount = customers.length || 1;
-  const sharedCostPerCustomer = totalFixedMonthly / customerCount;
-
-  const totalRevenue = customers.reduce((s, c) => s + c.planPrice, 0);
-  const totalNetProfit = totalRevenue - totalFixedMonthly - totalAPICost;
+  const totalRevenueCHF = customers.reduce((s, c) => s + c.planPriceCHF, 0);
+  const totalRevenueUSD = customers.reduce((s, c) => s + c.planPriceUSD, 0);
+  const totalNetProfitUSD = Math.round((totalRevenueUSD - totalFixedMonthly - totalAPICost) * 100) / 100;
+  const totalNetProfitCHF = Math.round((totalRevenueCHF - (totalFixedMonthly + totalAPICost) * fxRate) * 100) / 100;
 
   res.json({
+    fxRate,
     fixedCosts: {
       vps: { name: config.fixedCosts?.vps?.name || 'VPS', monthly: vpsMonthly },
       domain: { name: config.fixedCosts?.domain?.name || 'Domaine', yearly: domainYearly, monthly: domainMonthly },
@@ -184,13 +201,17 @@ router.get('/billing', requireAuth, requireAdmin, (req, res) => {
       totalTokens: Object.values(costs).reduce((s, c) => s + (c.totalTokens || 0), 0)
     },
     revenue: {
-      totalMonthly: totalRevenue,
-      totalYearly: totalRevenue * 12
+      totalMonthlyUSD: totalRevenueUSD,
+      totalMonthlyCHF: totalRevenueCHF,
+      totalYearlyUSD: Math.round(totalRevenueUSD * 100) / 100 * 12,
+      totalYearlyCHF: totalRevenueCHF * 12
     },
     profit: {
-      monthlyNet: totalNetProfit,
-      yearlyNet: totalNetProfit * 12,
-      marginPercent: totalRevenue > 0 ? Math.round((totalNetProfit / totalRevenue) * 100) : 0
+      monthlyNetUSD: totalNetProfitUSD,
+      monthlyNetCHF: totalNetProfitCHF,
+      yearlyNetUSD: Math.round(totalNetProfitUSD * 100) / 100 * 12,
+      yearlyNetCHF: Math.round(totalNetProfitCHF * 100) / 100 * 12,
+      marginPercent: totalRevenueUSD > 0 ? Math.round((totalNetProfitUSD / totalRevenueUSD) * 100) : 0
     },
     customers,
     availablePlans: config.plans || {}

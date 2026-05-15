@@ -3,43 +3,43 @@
     "vps": {
       "name": "VPS Hostinger K-H-M1 (annual)",
       "monthlyCost": 6.8,
-      "currency": "USD",
       "yearlyCost": 81.6,
+      "currency": "USD",
       "invoice": "HCY-24904909",
       "nextBilling": "2027-05-06"
     },
     "domain": {
       "name": "autonet.live (Namecheap)",
-      "yearlyCost": 12.98,
+      "yearlyCost": 14.98,
       "currency": "USD"
     }
   },
   "plans": {
-    "basic": {
-      "name": "Basic",
-      "description": "5 devoirs/mois",
-      "monthlyPrice": 5,
-      "homeworkLimit": 5,
+    "weekly": {
+      "name": "Weekly",
+      "description": "Chaque dimanche",
+      "monthlyPriceCHF": 2.99,
+      "homeworkLimit": 4,
       "color": "#22c55e"
     },
-    "standard": {
-      "name": "Standard",
-      "description": "15 devoirs/mois",
-      "monthlyPrice": 10,
+    "regular": {
+      "name": "Regular",
+      "description": "Tous les 2 jours",
+      "monthlyPriceCHF": 3.99,
       "homeworkLimit": 15,
       "color": "#00e6ff"
     },
-    "premium": {
-      "name": "Premium",
-      "description": "Illimit\u00e9",
-      "monthlyPrice": 20,
-      "homeworkLimit": -1,
+    "max": {
+      "name": "Max",
+      "description": "Quotidienne",
+      "monthlyPriceCHF": 5.99,
+      "homeworkLimit": 30,
       "color": "#8b5cf6"
     }
   },
   "customers": {
     "matisse": {
-      "plan": "basic"
+      "plan": "regular"
     }
   }
 }
