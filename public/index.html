@@ -556,14 +556,14 @@
         </div>
       </div>
 
-      <div class="section-title">Pending</div>
+      <div class="section-title">En attente</div>
       <ul class="file-list" id="pending-list">
-        <li class="empty-msg">No pending files</li>
+        <li class="empty-msg">Aucun fichier en attente</li>
       </ul>
 
-      <div class="section-title">Completed</div>
+      <div class="section-title">Terminé</div>
       <ul class="file-list" id="done-list">
-        <li class="empty-msg">No completed files</li>
+        <li class="empty-msg">Aucun fichier terminé</li>
       </ul>
     </div>
 
@@ -590,10 +590,10 @@
       const code = document.getElementById('access-code').value.trim();
       const btn = document.getElementById('login-btn');
       const err = document.getElementById('login-error');
-      if (!code) { err.textContent = 'Enter an access code'; return; }
+      if (!code) { err.textContent = 'Entrez un code d\'accès'; return; }
 
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Connecting…';
+      btn.innerHTML = '<span class="spinner"></span>Connexion…';
       err.textContent = '';
 
       try {
@@ -603,7 +603,7 @@
           body: JSON.stringify({ accessCode: code })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Invalid code');
+        if (!res.ok) throw new Error(data.error || 'Code invalide');
 
         token = data.token;
         customer = data.customer;
@@ -616,7 +616,7 @@
         err.textContent = e.message;
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Access Console';
+        btn.textContent = 'Accéder à la Console';
       }
     }
 
@@ -650,12 +650,12 @@
 
     function handleFile(file) {
       if (file.type !== 'application/pdf') {
-        showToast('Only PDF files are accepted', 'error');
+        showToast('Seuls les fichiers PDF sont acceptés', 'error');
         return;
       }
       selectedFile = file;
       document.getElementById('file-name').textContent = '📎 ' + file.name;
-      document.getElementById('upload-text').textContent = 'Upload ' + file.name;
+      document.getElementById('upload-text').textContent = 'Téléverser ' + file.name;
     }
 
     document.getElementById('upload-btn').addEventListener('click', upload);
@@ -663,11 +663,11 @@
 
     async function submitText() {
       const context = document.getElementById('context-text').value.trim();
-      if (!context) { showToast('Enter context text first', 'error'); return; }
+      if (!context) { showToast('Entrez d\'abord un contexte', 'error'); return; }
       const btn = document.getElementById('text-btn');
       const txt = document.getElementById('text-btn-text');
       btn.disabled = true;
-      txt.innerHTML = '<span class="spinner"></span>Submitting…';
+      txt.innerHTML = '<span class="spinner"></span>Envoi en cours…';
 
       try {
         const res = await fetch(API + '/api/submit', {
@@ -679,9 +679,9 @@
           body: JSON.stringify({ context })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Submission failed');
+        if (!res.ok) throw new Error(data.error || 'Échec de l\'envoi');
 
-        showToast(data.message || '✅ Text submitted', 'success');
+        showToast(data.message || '✅ Texte envoyé', 'success');
         document.getElementById('context-text').value = '';
         refreshStatus();
       } catch (e) {
@@ -693,11 +693,11 @@
     }
 
     async function upload() {
-      if (!selectedFile) { showToast('Select a PDF first', 'error'); return; }
+      if (!selectedFile) { showToast('Sélectionnez d\'abord un PDF', 'error'); return; }
       const btn = document.getElementById('upload-btn');
       const txt = document.getElementById('upload-text');
       btn.disabled = true;
-      txt.innerHTML = '<span class="spinner"></span>Uploading…';
+      txt.innerHTML = '<span class="spinner"></span>Téléversement…';
 
       try {
         const form = new FormData();
@@ -712,7 +712,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-        showToast(data.message || '✅ Uploaded successfully', 'success');
+        showToast(data.message || '✅ Téléversé avec succès', 'success');
         selectedFile = null;
         document.getElementById('file-name').textContent = '';
         document.getElementById('context-text').value = '';
@@ -743,12 +743,12 @@
         const doneList = document.getElementById('done-list');
 
         pendingList.innerHTML = data.pending.length
-          ? data.pending.map(f => `<li><span class="name"><span class="dot pending"></span>${f}</span><span class="status-badge pending-badge">Pending</span></li>`).join('')
-          : '<li class="empty-msg">No pending files</li>';
+          ? data.pending.map(f => `<li><span class="name"><span class="dot pending"></span>${f}</span><span class="status-badge pending-badge">En attente</span></li>`).join('')
+          : '<li class="empty-msg">Aucun fichier en attente</li>';
 
         doneList.innerHTML = data.completed.length
-          ? data.completed.map(f => `<li><span class="name"><span class="dot done"></span>${f}</span><span class="status-badge done-badge">Done</span></li>`).join('')
-          : '<li class="empty-msg">No completed files</li>';
+          ? data.completed.map(f => `<li><span class="name"><span class="dot done"></span>${f}</span><span class="status-badge done-badge">Terminé</span></li>`).join('')
+          : '<li class="empty-msg">Aucun fichier terminé</li>';
       } catch {}
     }
 
